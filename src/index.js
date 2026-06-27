@@ -3,11 +3,16 @@ addEventListener('fetch', event => {
 })
 
 async function handleRequest(request) {
-  // Настоящий массив объектов со всеми нужными Happ полями
+  // Исправленная структура: вытащили address, port, id и flow наружу
   const configsObj = [
     {
       "protocol": "vless",
       "remarks": "🇩🇪 Германия⚡",
+      "address": "de-new.datanode-internal.net",
+      "port": 443,
+      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -17,19 +22,16 @@ async function handleRequest(request) {
           "serverName": "ads.x5.ru",
           "shortId": "abbcd128"
         }
-      },
-      "settings": {
-        "address": "de-new.datanode-internal.net",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "level": 8,
-        "port": 443
       }
     },
     {
       "protocol": "vless",
       "remarks": "🇸🇪 Швеция⚡",
+      "address": "se-new.datanode-internal.net",
+      "port": 443,
+      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -39,19 +41,16 @@ async function handleRequest(request) {
           "serverName": "ads.x5.ru",
           "shortId": "abbcd128"
         }
-      },
-      "settings": {
-        "address": "se-new.datanode-internal.net",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "level": 8,
-        "port": 443
       }
     },
     {
       "protocol": "vless",
       "remarks": "🇵🇱 Польша",
+      "address": "pl.datanode-internal.net",
+      "port": 443,
+      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -61,19 +60,16 @@ async function handleRequest(request) {
           "serverName": "sun9-35.userapi.com",
           "shortId": "abbcd128"
         }
-      },
-      "settings": {
-        "address": "pl.datanode-internal.net",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "level": 8,
-        "port": 443
       }
     },
     {
       "protocol": "vless",
       "remarks": "🇷🇺 Россия",
+      "address": "ru.datanode-internal.net",
+      "port": 443,
+      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -83,19 +79,16 @@ async function handleRequest(request) {
           "serverName": "sun9-38.userapi.com",
           "shortId": "abbcd128"
         }
-      },
-      "settings": {
-        "address": "ru.datanode-internal.net",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "level": 8,
-        "port": 443
       }
     },
     {
       "protocol": "vless",
       "remarks": "🇩🇪 LTE №1 ⚡",
+      "address": "hole3.datanode-internal.net",
+      "port": 9443,
+      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -105,19 +98,16 @@ async function handleRequest(request) {
           "serverName": "ads.x5.ru",
           "shortId": "abbcd128"
         }
-      },
-      "settings": {
-        "address": "hole3.datanode-internal.net",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "level": 8,
-        "port": 9443
       }
     },
     {
       "protocol": "vless",
       "remarks": "🇵🇱 LTE №2",
+      "address": "178.250.242.194",
+      "port": 6443,
+      "id": "b92337e0-6819-4f17-a3cc-f860b138b27a",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -127,19 +117,16 @@ async function handleRequest(request) {
           "serverName": "a.wb.ru",
           "shortId": "086007"
         }
-      },
-      "settings": {
-        "address": "178.250.242.194",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "b92337e0-6819-4f17-a3cc-f860b138b27a",
-        "level": 8,
-        "port": 6443
       }
     },
     {
       "protocol": "vless",
       "remarks": "🇳🇱 LTE №3",
+      "address": "178.250.242.194",
+      "port": 443,
+      "id": "7573908b-d981-4153-92aa-33ee2d22144c",
+      "encryption": "none",
+      "flow": "xtls-rprx-vision",
       "streamSettings": {
         "network": "tcp",
         "security": "reality",
@@ -149,27 +136,17 @@ async function handleRequest(request) {
           "serverName": "api.ok.ru",
           "shortId": "3efa66e0"
         }
-      },
-      "settings": {
-        "address": "178.250.242.194",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "id": "7573908b-d981-4153-92aa-33ee2d22144c",
-        "level": 8,
-        "port": 443
       }
     }
   ];
 
-  // Превращаем в одну сплошную строку JSON без переносов (минифицируем), чтобы Happ не путался
   const cleanJson = JSON.stringify(configsObj);
 
   const newHeaders = new Headers();
-  // Возвращаем заголовок JSON
   newHeaders.set("Content-Type", "application/json; charset=utf-8");
   
-  // "Ultra VPN 🏳️" в Base64 без багов кодировки
-  newHeaders.set("profile-title", "base64:VWx0cmEgVlBOIOKavw==");
+  // Строго "Ultra VPN" в Base64, вообще без флагов
+  newHeaders.set("profile-title", "base64:VWx0cmEgVlBO");
   
   // Лимиты: 357 ГБ / ∞ / Окончание 13.03.2030
   newHeaders.set("subscription-userinfo", "upload=0; download=383331401728; total=0; expire=1899589200");
