@@ -5,7 +5,35 @@ export default {
     const accept = request.headers.get("Accept") || "";
     const userAgent = request.headers.get("user-agent") || "";
 
-    // ---- Серверы (с флагами в remarks для клиентов) ----
+    // ---- Константы для расчёта трафика ----
+    const START_DATE = new Date('2026-06-20T00:00:00Z');
+    const BASE_TRAFFIC_GB = 806;
+
+    // Детерминированное "случайное" число от 10 до 30 на основе даты
+    function getDailyIncrement(date) {
+      const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+      const x = Math.sin(seed) * 10000;
+      const r = x - Math.floor(x);
+      return Math.floor(r * 21) + 10; // 10-30
+    }
+
+    function getCurrentTrafficGB() {
+      const now = new Date();
+      const diffTime = now - START_DATE;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays <= 0) return BASE_TRAFFIC_GB;
+      let total = BASE_TRAFFIC_GB;
+      for (let d = 1; d <= diffDays; d++) {
+        const dayDate = new Date(START_DATE.getTime() + d * 24 * 60 * 60 * 1000);
+        total += getDailyIncrement(dayDate);
+      }
+      return total;
+    }
+
+    const usedTraffic = getCurrentTrafficGB();
+    const expireTimestamp = 1899589200; // 13.03.2030
+
+    // ---- Серверы (с флагами для клиентов) ----
     const nodes = [
       {
         tag: "de-1",
@@ -16,7 +44,7 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇩🇪 Германия",  // с флагом
+        remarks: "🇩🇪 Германия",
         network: "tcp",
         flow: "xtls-rprx-vision"
       },
@@ -68,14 +96,14 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇩🇪 LTE #1",  // флаг Германии
+        remarks: "🇩🇪 LTE #1",
         network: "grpc",
         flow: "",
         grpcServiceName: "ads.x5.ru"
       }
     ];
 
-    // ---- Функции генерации конфигов (используют remarks с флагами) ----
+    // ---- Функции генерации конфигов (для JSON-ответа) ----
     function makeOutbound({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, network, flow, grpcServiceName }) {
       const outbound = {
         tag: tag,
@@ -155,7 +183,7 @@ export default {
           { tag: "direct", protocol: "freedom" },
           { tag: "block", protocol: "blackhole" }
         ],
-        remarks: node.remarks, // здесь флаг
+        remarks: node.remarks,
         routing: {
           domainMatcher: "hybrid",
           domainStrategy: "IPIfNonMatch",
@@ -198,7 +226,7 @@ export default {
       };
     }
 
-    // ---- Условия для JSON ----
+    // ---- Условия для JSON (подписка для клиентов) ----
     const wantsJson = (path === '/json') 
                    || accept.includes('application/json')
                    || userAgent.includes('V2Ray') 
@@ -208,30 +236,25 @@ export default {
 
     if (wantsJson) {
       const configs = nodes.map(n => makeFullConfig(n));
-      const expireTimestamp = 1899589200;
-
+      const usedTrafficBytes = usedTraffic * 1024 * 1024 * 1024;
       return new Response(JSON.stringify(configs, null, 2), {
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Access-Control-Allow-Origin": "*",
           "Profile-Title": "Ultra VPN Plus",
           "Subscription-Status": "active",
-          "Subscription-Traffic": "876 GB / ∞",
+          "Subscription-Traffic": usedTraffic + " GB / ∞",
           "Subscription-Expire": String(expireTimestamp),
-          "subscription-userinfo": `upload=0; download=876000000000; total=0; expire=${expireTimestamp}`
+          "subscription-userinfo": `upload=0; download=${usedTrafficBytes}; total=0; expire=${expireTimestamp}`
         }
       });
     }
 
-    // ---- Подготовка данных для клиента (только имена без флагов для интерфейса) ----
-    // Для интерфейса мы удаляем флаг из remarks (первый символ и пробел)
-    const displayNames = nodes.map(n => {
-      // убираем флаг (первый эмодзи и пробел)
-      return n.remarks.replace(/^[^\s]+\s/, ''); // удаляет первый символ (флаг) и пробел
-    });
+    // ---- Подготовка данных для веб-интерфейса (без флагов) ----
+    const displayNames = nodes.map(n => n.remarks.replace(/^[^\s]+\s/, ''));
     const serverDataJson = JSON.stringify(displayNames);
 
-    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС (без флагов, но конфиги с флагами) ----
+    // ---- ВЕБ-ИНТЕРФЕЙС (с динамическим трафиком) ----
     const html = String.raw`
 <!DOCTYPE html>
 <html lang="ru">
@@ -448,7 +471,7 @@ export default {
             <div class="stats">
                 <div class="stat-item">
                     <span class="stat-label">📦 Трафик</span>
-                    <span class="stat-value">876 GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span>
+                    <span class="stat-value">${usedTraffic} GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">📅 Истекает</span>
@@ -497,7 +520,7 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// --- Диапазоны (по именам без флага) ----
+// --- Диапазоны (по именам без флага) ---
 function getPingRange(name) {
     if (name === 'Россия') return { min: 8, max: 42 };
     return { min: 60, max: 120 };
