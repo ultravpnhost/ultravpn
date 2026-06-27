@@ -75,7 +75,7 @@ export default {
       }
     ];
 
-    // ---- Функции генерации конфигов ----
+    // ---- Функции генерации конфигов (без изменений) ----
     function makeOutbound({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, network, flow, grpcServiceName }) {
       const outbound = {
         tag: tag,
@@ -223,8 +223,17 @@ export default {
       });
     }
 
-    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС ----
-    const html = `<!DOCTYPE html>
+    // ---- Генерация HTML через обычную конкатенацию (без вложенных шаблонных строк) ----
+    // Сначала подготовим данные для клиента в виде JSON
+    const serverData = nodes.map(n => ({
+      flag: n.remarks.split(' ')[0],
+      name: n.remarks,
+      tag: n.tag
+    }));
+    const serverDataJson = JSON.stringify(serverData);
+
+    const html = String.raw`
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -407,64 +416,61 @@ export default {
 </div>
 
 <script>
-    (function() {
-        // Данные серверов (скопированы из Worker)
-        const servers = ${JSON.stringify(nodes.map(n => ({ flag: n.remarks.split(' ')[0], name: n.remarks, tag: n.tag })))};
+// Данные серверов (переданы с сервера)
+var servers = ${serverDataJson};
 
-        function random(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
-        }
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-        function generateStatus() {
-            const ping = random(50, 200);        // от 50 до 200 мс
-            const speed = random(70, 500);       // от 70 до 500 Мбит/с
-            return { ping, speed };
-        }
+function generateStatus() {
+    var ping = random(50, 200);
+    var speed = random(70, 500);
+    return { ping: ping, speed: speed };
+}
 
-        function renderServers() {
-            const container = document.getElementById('serverList');
-            const now = new Date().toLocaleString('ru-RU');
-            document.getElementById('updateTime').textContent = now;
+function renderServers() {
+    var container = document.getElementById('serverList');
+    var now = new Date().toLocaleString('ru-RU');
+    document.getElementById('updateTime').textContent = now;
 
-            let html = '';
-            servers.forEach(s => {
-                const status = generateStatus();
-                html += `
-                    <div class="server-item">
-                        <div class="server-info">
-                            <span class="server-flag">${s.flag}</span>
-                            <span class="server-name">${s.name}</span>
-                        </div>
-                        <div class="server-stats">
-                            <span>📶 <span class="ping">${status.ping}</span> мс</span>
-                            <span>⚡ <span class="speed">${status.speed}</span> Мбит/с</span>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
+    var html = '';
+    for (var i = 0; i < servers.length; i++) {
+        var s = servers[i];
+        var status = generateStatus();
+        html += '<div class="server-item">' +
+            '<div class="server-info">' +
+                '<span class="server-flag">' + s.flag + '</span>' +
+                '<span class="server-name">' + s.name + '</span>' +
+            '</div>' +
+            '<div class="server-stats">' +
+                '<span>📶 <span class="ping">' + status.ping + '</span> мс</span>' +
+                '<span>⚡ <span class="speed">' + status.speed + '</span> Мбит/с</span>' +
+            '</div>' +
+        '</div>';
+    }
+    container.innerHTML = html;
+}
 
-        // Переключение страниц
-        const pageMain = document.getElementById('page-main');
-        const pageServers = document.getElementById('page-servers');
-        const statusBtn = document.getElementById('statusBtn');
-        const backBtn = document.getElementById('backBtn');
+// Переключение страниц
+var pageMain = document.getElementById('page-main');
+var pageServers = document.getElementById('page-servers');
+var statusBtn = document.getElementById('statusBtn');
+var backBtn = document.getElementById('backBtn');
 
-        function showPage(page) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-' + page).classList.add('active');
-            if (page === 'servers') {
-                renderServers();
-            }
-        }
+function showPage(page) {
+    var pages = document.querySelectorAll('.page');
+    for (var i = 0; i < pages.length; i++) {
+        pages[i].classList.remove('active');
+    }
+    document.getElementById('page-' + page).classList.add('active');
+    if (page === 'servers') {
+        renderServers();
+    }
+}
 
-        statusBtn.addEventListener('click', () => showPage('servers'));
-        backBtn.addEventListener('click', () => showPage('main'));
-
-        // При первом открытии страницы серверов (если она активна) — но по умолчанию скрыта
-        // Поэтому ничего не делаем, рендерим только при переходе.
-    })();
+statusBtn.addEventListener('click', function() { showPage('servers'); });
+backBtn.addEventListener('click', function() { showPage('main'); });
 </script>
 </body>
 </html>`;
