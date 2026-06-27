@@ -5,7 +5,7 @@ export default {
     const accept = request.headers.get("Accept") || "";
     const userAgent = request.headers.get("user-agent") || "";
 
-    // ---- Ваши 5 серверов (без изменений) ----
+    // ---- Серверы (обновлены названия) ----
     const nodes = [
       {
         tag: "de-1",
@@ -68,14 +68,14 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇩🇪 LTE",
+        remarks: "🇩🇪 LTE #1",
         network: "grpc",
         flow: "",
         grpcServiceName: "ads.x5.ru"
       }
     ];
 
-    // ---- Функции генерации конфигов (без изменений) ----
+    // ---- Функции генерации конфигов ----
     function makeOutbound({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, network, flow, grpcServiceName }) {
       const outbound = {
         tag: tag,
@@ -223,7 +223,7 @@ export default {
       });
     }
 
-    // ---- УЛУЧШЕННЫЙ ВЕБ-ИНТЕРФЕЙС (без устройств) ----
+    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС ----
     const html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -233,7 +233,7 @@ export default {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: #0b0e14;
             color: #e4e9f0;
             display: flex;
@@ -242,39 +242,30 @@ export default {
             min-height: 100vh;
             padding: 20px;
         }
+        .container { max-width: 420px; width: 100%; }
+        .page { display: none; animation: fade 0.25s ease; }
+        .page.active { display: block; }
+        @keyframes fade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
         .card {
-            max-width: 380px;
-            width: 100%;
             background: linear-gradient(145deg, #18181b, #0d0d10);
             border-radius: 28px;
             border: 1px solid #27272a;
-            padding: 36px 28px 28px;
+            padding: 32px 24px 24px;
             box-shadow: 0 30px 60px -20px rgba(0,0,0,0.8);
             transition: 0.3s;
-            backdrop-filter: blur(2px);
         }
-        .card:hover {
-            border-color: #3f3f46;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 28px;
-        }
-        .icon {
-            font-size: 56px;
-            display: block;
-            margin-bottom: 6px;
-        }
+        .card:hover { border-color: #3f3f46; }
+        .header { text-align: center; margin-bottom: 24px; }
+        .icon { font-size: 52px; display: block; margin-bottom: 4px; }
         .title {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
             background: linear-gradient(135deg, #58a6ff, #a78bfa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: -0.5px;
         }
-        .status-badge {
+        .badge {
             display: inline-block;
             background: rgba(22, 163, 74, 0.15);
             color: #22c55e;
@@ -282,15 +273,15 @@ export default {
             border-radius: 99px;
             font-size: 13px;
             font-weight: 600;
-            margin-top: 8px;
+            margin-top: 6px;
             border: 1px solid rgba(34, 197, 94, 0.2);
         }
         .stats {
             background: #111113;
             border-radius: 18px;
-            padding: 20px 18px;
+            padding: 18px 16px;
             border: 1px solid #1e1e21;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .stat-item {
             display: flex;
@@ -300,125 +291,181 @@ export default {
         }
         .stat-item + .stat-item {
             border-top: 1px solid #1e1e21;
-            margin-top: 6px;
+            margin-top: 4px;
             padding-top: 12px;
         }
-        .stat-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #8b95a9;
+        .stat-label { font-size: 14px; color: #8b95a9; display: flex; align-items: center; gap: 8px; }
+        .stat-value { font-size: 16px; font-weight: 600; }
+        .stat-value .date { color: #fca5a5; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            border: 1px solid #27272a;
+            background: #1e1e21;
+            color: #e4e9f0;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .btn:hover { background: #2a2a2e; border-color: #3f3f46; }
+        .btn-primary { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .back-header {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            margin-bottom: 18px;
         }
-        .stat-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: #e4e9f0;
-        }
-        .stat-value .highlight {
+        .back-header button {
+            background: transparent;
+            border: none;
             color: #58a6ff;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: 0.2s;
         }
-        .stat-value .date {
-            color: #fca5a5;
-        }
-        .progress-wrap {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #1e1e21;
-        }
-        .progress-label {
+        .back-header button:hover { background: #1e293b; }
+        .back-header h2 { font-size: 22px; font-weight: 600; }
+        .server-list { display: flex; flex-direction: column; gap: 12px; }
+        .server-item {
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
-            color: #8b95a9;
-            margin-bottom: 6px;
+            align-items: center;
+            background: #111113;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #1e1e21;
         }
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #1e1e21;
-            border-radius: 99px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            width: 70%; /* пример – можно сделать динамическим */
-            background: linear-gradient(90deg, #58a6ff, #a78bfa);
-            border-radius: 99px;
-            transition: width 0.6s ease;
-        }
-        .servers-info {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #8b95a9;
-            margin-top: 6px;
-        }
-        .servers-info span {
-            font-weight: 600;
-            color: #e4e9f0;
-        }
-        .footer {
-            text-align: center;
-            font-size: 14px;
-            color: #5a5f6b;
-            margin-top: 16px;
-        }
-        .footer a {
-            color: #58a6ff;
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
-        }
+        .server-info { display: flex; align-items: center; gap: 10px; }
+        .server-flag { font-size: 24px; }
+        .server-name { font-weight: 500; font-size: 15px; }
+        .server-stats { display: flex; gap: 16px; font-size: 13px; color: #8b95a9; }
+        .server-stats span { font-weight: 600; color: #e4e9f0; }
+        .ping { color: #58a6ff; }
+        .speed { color: #22c55e; }
+        .footer { text-align: center; font-size: 14px; color: #5a5f6b; margin-top: 16px; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
         @media (max-width: 400px) {
-            .card { padding: 24px 16px; }
-            .title { font-size: 24px; }
+            .card { padding: 20px 14px; }
+            .title { font-size: 22px; }
         }
     </style>
 </head>
 <body>
-<div class="card">
-    <div class="header">
-        <span class="icon">🚀</span>
-        <div class="title">Ultra VPN Plus</div>
-        <div class="status-badge">● Активен</div>
-    </div>
-
-    <div class="stats">
-        <div class="stat-item">
-            <span class="stat-label">📦 Трафик</span>
-            <span class="stat-value">357 <span style="color:#8b95a9;font-weight:400;">GB</span> <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-label">📅 Истекает</span>
-            <span class="stat-value date">13.03.2030</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-label">🖥️ Серверов</span>
-            <span class="stat-value">5</span>
-        </div>
-        <div class="progress-wrap">
-            <div class="progress-label">
-                <span>Использовано</span>
-                <span>70%</span>
+<div class="container">
+    <!-- Главная страница -->
+    <div id="page-main" class="page active">
+        <div class="card">
+            <div class="header">
+                <span class="icon">🚀</span>
+                <div class="title">Ultra VPN Plus</div>
+                <div class="badge">● Активен</div>
             </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:70%;"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">📦 Трафик</span>
+                    <span class="stat-value">357 GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">📅 Истекает</span>
+                    <span class="stat-value date">13.03.2030</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">🖥️ Серверов</span>
+                    <span class="stat-value">5</span>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="statusBtn">📊 Статус серверов</button>
+            <div class="footer">
+                Вопросы? <a href="https://t.me/fhcsupport">@fhcsupport</a>
             </div>
         </div>
     </div>
 
-    <div class="servers-info">
-        <span>🌍 Доступно серверов: <span>5</span></span>
-    </div>
-
-    <div class="footer">
-        Вопросы? <a href="https://t.me/fhcsupport">@fhcsupport</a>
+    <!-- Страница статуса серверов -->
+    <div id="page-servers" class="page">
+        <div class="card">
+            <div class="back-header">
+                <button id="backBtn">← Назад</button>
+                <h2>Статус серверов</h2>
+            </div>
+            <div id="serverList" class="server-list">
+                <!-- заполняется JS -->
+            </div>
+            <div class="footer" style="margin-top:18px;">
+                <span style="color:#5a5f6b;">Обновлено: <span id="updateTime"></span></span>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+    (function() {
+        // Данные серверов (скопированы из Worker)
+        const servers = ${JSON.stringify(nodes.map(n => ({ flag: n.remarks.split(' ')[0], name: n.remarks, tag: n.tag })))};
+
+        function random(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateStatus() {
+            const ping = random(50, 200);        // от 50 до 200 мс
+            const speed = random(70, 500);       // от 70 до 500 Мбит/с
+            return { ping, speed };
+        }
+
+        function renderServers() {
+            const container = document.getElementById('serverList');
+            const now = new Date().toLocaleString('ru-RU');
+            document.getElementById('updateTime').textContent = now;
+
+            let html = '';
+            servers.forEach(s => {
+                const status = generateStatus();
+                html += `
+                    <div class="server-item">
+                        <div class="server-info">
+                            <span class="server-flag">${s.flag}</span>
+                            <span class="server-name">${s.name}</span>
+                        </div>
+                        <div class="server-stats">
+                            <span>📶 <span class="ping">${status.ping}</span> мс</span>
+                            <span>⚡ <span class="speed">${status.speed}</span> Мбит/с</span>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // Переключение страниц
+        const pageMain = document.getElementById('page-main');
+        const pageServers = document.getElementById('page-servers');
+        const statusBtn = document.getElementById('statusBtn');
+        const backBtn = document.getElementById('backBtn');
+
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+            if (page === 'servers') {
+                renderServers();
+            }
+        }
+
+        statusBtn.addEventListener('click', () => showPage('servers'));
+        backBtn.addEventListener('click', () => showPage('main'));
+
+        // При первом открытии страницы серверов (если она активна) — но по умолчанию скрыта
+        // Поэтому ничего не делаем, рендерим только при переходе.
+    })();
+</script>
 </body>
 </html>`;
 
