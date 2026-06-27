@@ -223,11 +223,11 @@ export default {
       });
     }
 
-    // ---- Подготовка данных для клиента (только имена) ----
+    // ---- Подготовка данных для клиента ----
     const serverNames = nodes.map(n => n.remarks);
     const serverDataJson = JSON.stringify(serverNames);
 
-    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС ----
+    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС (с плавной вариацией) ----
     const html = String.raw`
 <!DOCTYPE html>
 <html lang="ru">
@@ -397,19 +397,32 @@ export default {
         .update-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .progress-container {
             width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            visibility: hidden;
+        }
+        .progress-container.active { visibility: visible; }
+        .progress-bar {
+            flex: 1;
             height: 6px;
             background: #1e1e21;
             border-radius: 99px;
             overflow: hidden;
-            visibility: hidden;
         }
-        .progress-container.active { visibility: visible; }
         .progress-fill {
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, #58a6ff, #a78bfa);
             border-radius: 99px;
-            transition: width 0.2s linear;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #58a6ff;
+            min-width: 44px;
+            text-align: right;
         }
         @media (max-width: 400px) {
             .card { padding: 20px 14px; }
@@ -456,7 +469,10 @@ export default {
             <div class="update-section">
                 <button class="update-btn" id="updateBtn">🔄 Обновить статус</button>
                 <div class="progress-container" id="progressContainer">
-                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">0%</span>
                 </div>
             </div>
             <div class="footer" style="margin-top:12px;">
@@ -467,7 +483,7 @@ export default {
 </div>
 
 <script>
-// Список имён серверов (передан с сервера)
+// Список имён серверов
 var serverNames = ${serverDataJson};
 var STORAGE_KEY = 'ultra_vpn_servers_data';
 var isUpdating = false;
@@ -477,63 +493,121 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Генерация новых данных для всех серверов
-function generateServerData() {
+// --- Исходные диапазоны ---
+function getPingRange(name) {
+    if (name === 'Россия') return { min: 8, max: 42 };
+    return { min: 60, max: 120 };
+}
+function getSpeedRange(name) {
+    if (name === 'Россия') return { min: 50, max: 150 };
+    return { min: 50, max: 200 };
+}
+
+// --- Генерация полностью случайных данных ---
+function generateRandomData() {
     var result = [];
     for (var i = 0; i < serverNames.length; i++) {
         var name = serverNames[i];
-        var ping, speed;
-        if (name === 'Россия') {
-            ping = random(8, 42);
-            speed = random(50, 150);
-        } else {
-            ping = random(60, 120);
-            speed = random(50, 200);
-        }
-        result.push({ name: name, ping: ping, speed: speed });
+        var pr = getPingRange(name);
+        var sr = getSpeedRange(name);
+        result.push({
+            name: name,
+            ping: random(pr.min, pr.max),
+            speed: random(sr.min, sr.max)
+        });
     }
     return result;
 }
 
-// Сохранение данных в localStorage
-function saveData(data) {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (e) {}
+// --- Генерация данных с плавной вариацией (на основе старых) ---
+function generateVariantData(oldData) {
+    var result = [];
+    for (var i = 0; i < oldData.length; i++) {
+        var old = oldData[i];
+        var name = old.name;
+        var pr = getPingRange(name);
+        var sr = getSpeedRange(name);
+        // Определяем новый пинг: ±30% от старого, но в пределах диапазона
+        var pingDelta = Math.round(old.ping * 0.3);
+        var newPing = old.ping + random(-pingDelta, pingDelta);
+        newPing = Math.min(Math.max(newPing, pr.min), pr.max);
+        // Скорость: ±30%
+        var speedDelta = Math.round(old.speed * 0.3);
+        var newSpeed = old.speed + random(-speedDelta, speedDelta);
+        newSpeed = Math.min(Math.max(newSpeed, sr.min), sr.max);
+        result.push({
+            name: name,
+            ping: newPing,
+            speed: newSpeed
+        });
+    }
+    return result;
 }
 
-// Загрузка данных из localStorage
-function loadData() {
+// --- Работа с localStorage ---
+function saveState(data, timestamp) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            data: data,
+            timestamp: timestamp || Date.now()
+        }));
+    } catch(e) {}
+}
+
+function loadState() {
     try {
         var raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
             var parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length === serverNames.length) {
+            if (parsed.data && Array.isArray(parsed.data) && parsed.data.length === serverNames.length) {
                 return parsed;
             }
         }
-    } catch (e) {}
+    } catch(e) {}
     return null;
 }
 
-// Получить актуальные данные (из localStorage или новые)
+// --- Получить актуальные данные (с учётом времени) ---
 function getCurrentData() {
-    var data = loadData();
-    if (!data) {
-        data = generateServerData();
-        saveData(data);
+    var state = loadState();
+    if (!state) {
+        // Нет данных – генерируем свежие
+        var fresh = generateRandomData();
+        saveState(fresh);
+        return fresh;
     }
-    return data;
+    // Проверяем возраст данных
+    var now = Date.now();
+    var age = now - state.timestamp;
+    var TEN_MINUTES = 10 * 60 * 1000;
+    if (age > TEN_MINUTES) {
+        // Данные устарели – генерируем полностью случайные
+        var fresh2 = generateRandomData();
+        saveState(fresh2);
+        return fresh2;
+    } else {
+        // Данные свежие – возвращаем как есть
+        return state.data;
+    }
 }
 
-// Обновить данные (сгенерировать новые, сохранить, вернуть)
+// --- Обновить данные с учётом времени ---
 function refreshData() {
-    var data = generateServerData();
-    saveData(data);
-    return data;
+    var state = loadState();
+    var now = Date.now();
+    var TEN_MINUTES = 10 * 60 * 1000;
+    var newData;
+    if (!state || (now - state.timestamp > TEN_MINUTES)) {
+        // Старые данные или отсутствуют – генерируем случайные
+        newData = generateRandomData();
+    } else {
+        // Свежие – генерируем плавную вариацию
+        newData = generateVariantData(state.data);
+    }
+    saveState(newData);
+    return newData;
 }
 
-// Отобразить данные в списке
 function renderServers(data) {
     var container = document.getElementById('serverList');
     var html = '';
@@ -550,129 +624,80 @@ function renderServers(data) {
     container.innerHTML = html;
 }
 
-// Обновить время на странице
 function updateTimeDisplay() {
     var now = new Date().toLocaleString('ru-RU');
     document.getElementById('updateTime').textContent = now;
 }
 
-// Основная функция обновления (с анимацией прогресса)
-function performUpdate(manual = false) {
+// --- Загрузка с остановками ---
+function performUpdate(manual) {
     if (isUpdating) return;
     isUpdating = true;
     var btn = document.getElementById('updateBtn');
-    var progressContainer = document.getElementById('progressContainer');
-    var progressFill = document.getElementById('progressFill');
-    
+    var container = document.getElementById('progressContainer');
+    var fill = document.getElementById('progressFill');
+    var text = document.getElementById('progressText');
+
     btn.disabled = true;
     btn.textContent = '⏳ Обновление...';
-    progressContainer.classList.add('active');
-    progressFill.style.width = '0%';
+    container.classList.add('active');
+    fill.style.width = '0%';
+    text.textContent = '0%';
 
-    var startTime = Date.now();
-    var duration = 8000; // 8 секунд
-    var interval = setInterval(function() {
-        var elapsed = Date.now() - startTime;
-        var percent = Math.min((elapsed / duration) * 100, 100);
-        progressFill.style.width = percent + '%';
-        if (percent >= 100) {
-            clearInterval(interval);
-            // Генерируем новые данные
+    var progress = 0;
+    var target = 100;
+    var step = function() {
+        var increment = random(1, 6);
+        progress = Math.min(progress + increment, target);
+        fill.style.width = progress + '%';
+        text.textContent = progress + '%';
+
+        if (progress >= target) {
+            // Завершено
             var newData = refreshData();
             renderServers(newData);
             updateTimeDisplay();
-            // Скрываем прогресс
-            progressContainer.classList.remove('active');
+            container.classList.remove('active');
             btn.disabled = false;
             btn.textContent = '🔄 Обновить статус';
             isUpdating = false;
-            // Если обновление было ручным, сбрасываем таймер автообновления и запускаем заново
-            if (manual) {
-                resetAutoUpdate();
-            }
+            resetAutoUpdate();
+            return;
         }
-    }, 50);
+
+        if (Math.random() < 0.25) {
+            var delay = random(500, 1000);
+            setTimeout(step, delay);
+        } else {
+            var nextDelay = random(200, 400);
+            setTimeout(step, nextDelay);
+        }
+    };
+
+    setTimeout(step, 300);
 }
 
-// Сброс и запуск таймера автообновления
 function resetAutoUpdate() {
-    if (autoUpdateTimer) {
-        clearTimeout(autoUpdateTimer);
-        autoUpdateTimer = null;
-    }
-    // Случайный интервал от 10 до 20 секунд (в миллисекундах)
+    if (autoUpdateTimer) { clearTimeout(autoUpdateTimer); autoUpdateTimer = null; }
     var delay = random(10000, 20000);
     autoUpdateTimer = setTimeout(function() {
-        // Проверяем, не обновляется ли уже, и не находится ли страница в фоновом режиме (можно игнорировать)
         if (!isUpdating) {
             performUpdate(false);
         }
-        // После завершения обновления таймер будет перезапущен внутри performUpdate (если manual=false)
-        // Но если по какой-то причине обновление не запустилось, перезапускаем таймер снова
-        // Лучше перезапускать после завершения обновления, но здесь мы сделаем так:
-        // После каждого автообновления перезапускаем таймер.
-        // Однако performUpdate не знает, что был авто-вызов, поэтому после его завершения нужно перезапустить таймер.
-        // Но мы перезапустим таймер сразу после окончания обновления, независимо от того, ручное или авто.
-        // Для этого мы можем добавить флаг, что обновление завершено, и перезапустить таймер.
     }, delay);
 }
 
-// Функция, вызываемая после завершения обновления (ручного или авто)
-function onUpdateComplete(manual) {
-    // Перезапускаем таймер автообновления
-    resetAutoUpdate();
-}
-
-// Модифицируем performUpdate, чтобы после завершения вызывать onUpdateComplete
-// Переопределим performUpdate
-var originalPerformUpdate = performUpdate;
-performUpdate = function(manual) {
-    if (isUpdating) return;
-    isUpdating = true;
-    var btn = document.getElementById('updateBtn');
-    var progressContainer = document.getElementById('progressContainer');
-    var progressFill = document.getElementById('progressFill');
-    
-    btn.disabled = true;
-    btn.textContent = '⏳ Обновление...';
-    progressContainer.classList.add('active');
-    progressFill.style.width = '0%';
-
-    var startTime = Date.now();
-    var duration = 8000;
-    var interval = setInterval(function() {
-        var elapsed = Date.now() - startTime;
-        var percent = Math.min((elapsed / duration) * 100, 100);
-        progressFill.style.width = percent + '%';
-        if (percent >= 100) {
-            clearInterval(interval);
-            var newData = refreshData();
-            renderServers(newData);
-            updateTimeDisplay();
-            progressContainer.classList.remove('active');
-            btn.disabled = false;
-            btn.textContent = '🔄 Обновить статус';
-            isUpdating = false;
-            // Запускаем таймер автообновления заново
-            resetAutoUpdate();
-        }
-    }, 50);
-};
-
-// Инициализация при загрузке страницы
 function init() {
     var data = getCurrentData();
     renderServers(data);
     updateTimeDisplay();
-    // Запускаем автообновление
     resetAutoUpdate();
-    // Обработчики кнопок
     document.getElementById('updateBtn').addEventListener('click', function() {
-        performUpdate(true); // ручное обновление
+        performUpdate(true);
     });
 }
 
-// Страница статуса серверов
+// Переключение страниц
 var pageMain = document.getElementById('page-main');
 var pageServers = document.getElementById('page-servers');
 var statusBtn = document.getElementById('statusBtn');
@@ -685,7 +710,6 @@ function showPage(page) {
     }
     document.getElementById('page-' + page).classList.add('active');
     if (page === 'servers') {
-        // Если список пуст (первый раз), инициализируем
         if (!document.getElementById('serverList').innerHTML) {
             init();
         }
@@ -694,12 +718,6 @@ function showPage(page) {
 
 statusBtn.addEventListener('click', function() { showPage('servers'); });
 backBtn.addEventListener('click', function() { showPage('main'); });
-
-// Если страница серверов была открыта ранее (например, при обновлении), но не была инициализирована
-// Мы можем проверить при загрузке, но проще вызвать init при первом открытии.
-// Для безопасности, если при загрузке страницы сразу активна страница серверов (что маловероятно), то инициализируем.
-// Но по умолчанию активна главная.
-// Поэтому init вызывается только при переходе на страницу серверов, если список пуст.
 </script>
 </body>
 </html>`;
