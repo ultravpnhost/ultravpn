@@ -202,23 +202,20 @@ const configsObj = [
   }
 ];
 
-// Экспортируем через ES Modules, как просит новый Wrangler API
 export default {
   async fetch(request, env, ctx) {
     const userAgent = request.headers.get("user-agent") || "";
-    
-    // Проверяем клиентов
     const vpnClients = ["v2ray", "nekobox", "shadowrocket", "streisand", "sing-box", "clash", "happ", "xray"];
     const isVpnClient = vpnClients.some(client => userAgent.toLowerCase().includes(client));
     const url = new URL(request.url);
 
-    // 1. ДЛЯ VPN КЛИЕНТОВ (JSON Конфиги)
+    // 1. ДЛЯ VPN КЛИЕНТОВ
     if (isVpnClient || url.searchParams.get("sub") === "1" || request.headers.get("accept")?.includes("json")) {
       const cleanJson = JSON.stringify(configsObj);
 
       const newHeaders = new Headers();
       newHeaders.set("Content-Type", "application/json; charset=utf-8");
-      newHeaders.set("profile-title", "base64:VWx0cmEgVlBOIOKavw=="); // Ultra VPN 🏳️
+      newHeaders.set("profile-title", "base64:VWx0cmEgVlBOIOKavw==");
       newHeaders.set("subscription-userinfo", "upload=0; download=383331401728; total=0; expire=1899589200");
       newHeaders.set("profile-update-interval", "1");
       newHeaders.set("Access-Control-Allow-Origin", "*");
@@ -229,7 +226,7 @@ export default {
       });
     }
 
-    // 2. ДЛЯ БРАУЗЕРА (Красивый Веб-Интерфейс)
+    // 2. ДЛЯ БРАУЗЕРА
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="ru">
