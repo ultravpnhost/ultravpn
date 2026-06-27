@@ -1,7 +1,7 @@
 export default {
   async fetch(request, env, ctx) {
     // --- ДАННЫЕ ПОДПИСКИ ---
-    const totalTraffic = "357 GB";
+    const totalTraffic = "874 GB";
     const expirationDate = "13.03.2030";
     const supportContact = "@fhcsupport"; 
     const profileTitleBase64 = "VWx0cmEgVlBOIFBsdXM="; // Base64 для "Ultra VPN Plus"
@@ -123,7 +123,7 @@ ${plainTextLinks}
     
     // Передаем статистику (0 использовано из 357 GB) в хедерах для VPN-клиентов
     newHeaders.set("profile-title", `base64:${profileTitleBase64}`);
-    newHeaders.set("subscription-userinfo", "upload=0; download=0; total=383331401728; expire=1899589200");
+    newHeaders.set("subscription-userinfo", "upload=0; download=938460353216; total=0; expire=1899589200");
     newHeaders.set("profile-update-interval", "1");
     newHeaders.set("Access-Control-Allow-Origin", "*");
 
