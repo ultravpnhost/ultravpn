@@ -146,11 +146,12 @@ export default {
       }
     ];
 
-    // Проверяем: это браузер?
-    const vpnClients = ["v2ray", "nekobox", "shadowrocket", "streisand", "sing-box", "clash", "happ", "xray"];
-    const isVpnClient = vpnClients.some(client => userAgent.toLowerCase().includes(client));
+    // --- ПРОВЕРКА: ЧТО ОТДАВАТЬ (ВЕБ-СТРАНИЦУ ИЛИ КОНФИГИ) ---
+    // Теперь страница откроется ТОЛЬКО если перейти по ссылке вида: твоя_ссылка?html=1
+    // В остальных случаях клиенты гарантированно получат чистый JSON
+    const wantsHtml = url.searchParams.get("html") === "1";
 
-    if (!isVpnClient && userAgent.includes("Mozilla") && !url.searchParams.has("config") && url.searchParams.get("sub") !== "1") {
+    if (wantsHtml) {
       const html = `
       <!DOCTYPE html>
       <html lang="ru">
@@ -197,7 +198,7 @@ export default {
       return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
 
-    // --- ВАРИАНТ ДЛЯ VPN КЛИЕНТОВ ---
+    // --- ВАРИАНТ ДЛЯ VPN КЛИЕНТОВ (ЕСЛИ НЕТ ?html=1) ---
     const cleanJson = JSON.stringify(configsObj);
     const finalPayload = announceStr + cleanJson;
 
