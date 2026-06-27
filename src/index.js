@@ -232,7 +232,7 @@ export default {
                    || userAgent.includes('V2Ray') 
                    || userAgent.includes('Happ') 
                    || userAgent.includes('sing-box')
-                   || userAgent.includes('INCy');
+                   || userAgent.includes('INCY');
 
     if (wantsJson) {
       const configs = nodes.map(n => makeFullConfig(n));
