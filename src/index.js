@@ -227,7 +227,7 @@ export default {
     const serverNames = nodes.map(n => n.remarks);
     const serverDataJson = JSON.stringify(serverNames);
 
-    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС (с плавной вариацией) ----
+    // ---- ОБНОВЛЁННЫЙ ИНТЕРФЕЙС (с диапазоном для Германии) ----
     const html = String.raw`
 <!DOCTYPE html>
 <html lang="ru">
@@ -493,14 +493,15 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// --- Исходные диапазоны ---
+// --- Диапазоны ---
 function getPingRange(name) {
     if (name === 'Россия') return { min: 8, max: 42 };
     return { min: 60, max: 120 };
 }
 function getSpeedRange(name) {
     if (name === 'Россия') return { min: 50, max: 150 };
-    return { min: 50, max: 200 };
+    if (name === 'Германия') return { min: 100, max: 200 }; // Уникальный диапазон для Германии
+    return { min: 50, max: 200 }; // Швеция, Польша, LTE #1 и другие
 }
 
 // --- Генерация полностью случайных данных ---
@@ -527,7 +528,7 @@ function generateVariantData(oldData) {
         var name = old.name;
         var pr = getPingRange(name);
         var sr = getSpeedRange(name);
-        // Определяем новый пинг: ±30% от старого, но в пределах диапазона
+        // Пинг: ±30%
         var pingDelta = Math.round(old.ping * 0.3);
         var newPing = old.ping + random(-pingDelta, pingDelta);
         newPing = Math.min(Math.max(newPing, pr.min), pr.max);
@@ -571,22 +572,18 @@ function loadState() {
 function getCurrentData() {
     var state = loadState();
     if (!state) {
-        // Нет данных – генерируем свежие
         var fresh = generateRandomData();
         saveState(fresh);
         return fresh;
     }
-    // Проверяем возраст данных
     var now = Date.now();
     var age = now - state.timestamp;
     var TEN_MINUTES = 10 * 60 * 1000;
     if (age > TEN_MINUTES) {
-        // Данные устарели – генерируем полностью случайные
         var fresh2 = generateRandomData();
         saveState(fresh2);
         return fresh2;
     } else {
-        // Данные свежие – возвращаем как есть
         return state.data;
     }
 }
@@ -598,10 +595,8 @@ function refreshData() {
     var TEN_MINUTES = 10 * 60 * 1000;
     var newData;
     if (!state || (now - state.timestamp > TEN_MINUTES)) {
-        // Старые данные или отсутствуют – генерируем случайные
         newData = generateRandomData();
     } else {
-        // Свежие – генерируем плавную вариацию
         newData = generateVariantData(state.data);
     }
     saveState(newData);
@@ -653,7 +648,6 @@ function performUpdate(manual) {
         text.textContent = progress + '%';
 
         if (progress >= target) {
-            // Завершено
             var newData = refreshData();
             renderServers(newData);
             updateTimeDisplay();
