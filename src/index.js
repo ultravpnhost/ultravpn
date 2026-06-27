@@ -31,8 +31,7 @@ export default {
 
     const usedTraffic = getCurrentTrafficGB();
     const expireTimestamp = 1899589200; // 13.03.2030
-    const subscriptionTitle = "Ultra VPN Plus";
-    const announcementText = "🔥 Новые серверы в Германии и LTE! Подписка активна до 2030 года. Вопросы в @fhcsupport";
+    const subscriptionTitle = "Ultra VPN Plus"; // Везде теперь так
 
     // ---- Серверы (с флагами для клиентов) ----
     const nodes = [
@@ -243,6 +242,7 @@ export default {
     // 1. /wlbypass — отдаёт plain text с заголовками в теле
     // ============================================================
     if (path === '/wlbypass') {
+      // Заголовки в теле (комментарии)
       const headerLines = [
         `#profile-title: ${subscriptionTitle}`,
         `#profile-update-interval: 1`,
@@ -297,8 +297,7 @@ export default {
             title: subscriptionTitle,
             traffic: usedTraffic + " GB / ∞",
             expire: expireTimestamp,
-            status: "active",
-            announcement: announcementText
+            status: "active"
           }
         };
         return new Response(JSON.stringify(responseBody, null, 2), {
@@ -557,7 +556,7 @@ export default {
             </div>
             <div class="announcement">
                 <span class="announcement-icon">📢</span>
-                <span class="announcement-text">${announcementText}</span>
+                <span class="announcement-text">🔥 Новые серверы в Германии и LTE! Подписка активна до 2030 года. Вопросы в @fhcsupport</span>
             </div>
             <button class="btn-status" id="statusBtn">📊 Статус серверов</button>
             <div class="footer">
