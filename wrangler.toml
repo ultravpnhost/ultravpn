@@ -1,3 +1,8 @@
-name = "ultra-vpn-sub"
+name = "sub"
 main = "src/index.js"
-compatibility_date = "2026-06-25"
+compatibility_date = "2026-06-27"
+
+[compatibility_flags]
+
+# Очень важно, чтобы НЕ БЫЛО строчки вроде format = "service-worker"
+# Если используется [build], убедиться, что тип сборки указан как ES модули.
