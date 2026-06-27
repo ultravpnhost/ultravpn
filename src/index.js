@@ -1,9 +1,11 @@
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const accept = request.headers.get("Accept") || "";
     const userAgent = request.headers.get("user-agent") || "";
-    const isClient = userAgent.includes("V2Ray") || userAgent.includes("Happ") || userAgent.includes("sing-box");
 
-    // ---- Ваши 5 серверов (LTE №2 и №3 удалены) ----
+    // ---- Ваши 5 серверов ----
     const nodes = [
       {
         tag: "de-1",
@@ -62,7 +64,7 @@ export default {
       }
     ];
 
-    // ---- Функция генерации полного конфига для Sing-box (как в vpn.json) ----
+    // ---- Функция генерации конфига для Sing-box ----
     function makeConfig({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, remarks }) {
       return {
         dns: {
@@ -171,19 +173,34 @@ export default {
       };
     }
 
-    // ---- Если запрос от VPN-клиента (V2Ray, Happ, sing-box) ----
-    if (isClient) {
+    // ---- Условия для JSON ----
+    const wantsJson = (path === '/json') 
+                   || accept.includes('application/json')
+                   || userAgent.includes('V2Ray') 
+                   || userAgent.includes('Happ') 
+                   || userAgent.includes('sing-box')
+                   || userAgent.includes('INCy');
+
+    if (wantsJson) {
       const configs = nodes.map(n => makeConfig(n));
+      const expireTimestamp = 1899589200; // 13.03.2030
+
       return new Response(JSON.stringify(configs, null, 2), {
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Access-Control-Allow-Origin": "*",
-          "subscription-userinfo": "upload=0; download=383331401728; total=0; expire=1899589200"
+          // ---- Заголовки подписки ----
+          "Profile-Title": "Ultra VPN Plus",
+          "Subscription-Status": "active",
+          "Subscription-Traffic": "357 GB / ∞",
+          "Subscription-Expire": String(expireTimestamp),
+          // Стандартный заголовок для многих клиентов
+          "subscription-userinfo": `upload=0; download=383331401728; total=0; expire=${expireTimestamp}`
         }
       });
     }
 
-    // ---- ИНАЧЕ: ВЕБ-ИНТЕРФЕЙС (ваш минималистичный шаблон) ----
+    // ---- ВЕБ-ИНТЕРФЕЙС (минималистичный дашборд) ----
     const html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
