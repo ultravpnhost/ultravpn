@@ -4,57 +4,108 @@ export default {
     const wantsHtml = url.searchParams.has("html");
 
     const configs = [
-      {
-        "remarks": "🇩🇪 Германия",
-        "protocol": "vless",
-        "address": "de-new.datanode-internal.net",
-        "port": 443,
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "streamSettings": { "network": "tcp", "security": "reality", "realitySettings": { "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", "serverName": "ads.x5.ru", "shortId": "abbcd128" } }
-      },
-      {
-        "remarks": "🇸🇪 Швеция",
-        "protocol": "vless",
-        "address": "se-new.datanode-internal.net",
-        "port": 443,
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "streamSettings": { "network": "tcp", "security": "reality", "realitySettings": { "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", "serverName": "ads.x5.ru", "shortId": "abbcd128" } }
-      },
-      {
-        "remarks": "🇵🇱 Польша",
-        "protocol": "vless",
-        "address": "pl.datanode-internal.net",
-        "port": 443,
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "streamSettings": { "network": "tcp", "security": "reality", "realitySettings": { "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", "serverName": "sun9-35.userapi.com", "shortId": "abbcd128" } }
-      },
-      {
-        "remarks": "🇷🇺 Россия",
-        "protocol": "vless",
-        "address": "ru.datanode-internal.net",
-        "port": 443,
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "streamSettings": { "network": "tcp", "security": "reality", "realitySettings": { "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", "serverName": "sun9-38.userapi.com", "shortId": "abbcd128" } }
-      },
-      {
-        "remarks": "🇩🇪 LTE #1",
-        "protocol": "vless",
-        "address": "hole3.datanode-internal.net",
-        "port": 9443,
-        "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        "encryption": "none",
-        "flow": "xtls-rprx-vision",
-        "streamSettings": { "network": "tcp", "security": "reality", "realitySettings": { "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", "serverName": "ads.x5.ru", "shortId": "abbcd128" } }
+     [
+  {
+    "remarks": "🇩🇪 Германия",
+    "protocol": "vless",
+    "address": "de-new.datanode-internal.net",
+    "port": 443,
+    "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+    "encryption": "none",
+    "flow": "xtls-rprx-vision",
+    "streamSettings": {
+      "network": "tcp",
+      "security": "reality",
+      "realitySettings": {
+        "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+        "serverName": "ads.x5.ru",
+        "shortId": "abbcd128",
+        "fingerprint": "qq"
       }
-    ];
+    },
+    "dns": { "queryStrategy": "UseIP" }
+  },
+  {
+    "remarks": "🇸🇪 Швеция",
+    "protocol": "vless",
+    "address": "se-new.datanode-internal.net",
+    "port": 443,
+    "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+    "encryption": "none",
+    "flow": "xtls-rprx-vision",
+    "streamSettings": {
+      "network": "tcp",
+      "security": "reality",
+      "realitySettings": {
+        "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+        "serverName": "ads.x5.ru",
+        "shortId": "abbcd128",
+        "fingerprint": "qq"
+      }
+    },
+    "dns": { "queryStrategy": "UseIP" }
+  },
+  {
+    "remarks": "🇵🇱 Польша",
+    "protocol": "vless",
+    "address": "pl.datanode-internal.net",
+    "port": 443,
+    "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+    "encryption": "none",
+    "flow": "xtls-rprx-vision",
+    "streamSettings": {
+      "network": "tcp",
+      "security": "reality",
+      "realitySettings": {
+        "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+        "serverName": "sun9-35.userapi.com",
+        "shortId": "abbcd128",
+        "fingerprint": "qq"
+      }
+    },
+    "dns": { "queryStrategy": "UseIP" }
+  },
+  {
+    "remarks": "🇷🇺 Россия",
+    "protocol": "vless",
+    "address": "ru.datanode-internal.net",
+    "port": 443,
+    "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+    "encryption": "none",
+    "flow": "xtls-rprx-vision",
+    "streamSettings": {
+      "network": "tcp",
+      "security": "reality",
+      "realitySettings": {
+        "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+        "serverName": "sun9-38.userapi.com",
+        "shortId": "abbcd128",
+        "fingerprint": "qq"
+      }
+    },
+    "dns": { "queryStrategy": "UseIP" }
+  },
+  {
+    "remarks": "🇩🇪 LTE #1",
+    "protocol": "vless",
+    "address": "hole3.datanode-internal.net",
+    "port": 9443,
+    "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+    "encryption": "none",
+    "flow": "xtls-rprx-vision",
+    "streamSettings": {
+      "network": "tcp",
+      "security": "reality",
+      "realitySettings": {
+        "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+        "serverName": "ads.x5.ru",
+        "shortId": "abbcd128",
+        "fingerprint": "qq"
+      }
+    },
+    "dns": { "queryStrategy": "UseIP" }
+  }
+];
 
     if (wantsHtml) {
       const html = `<body style="background:#0d1117; color:#fff; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;">
