@@ -5,7 +5,7 @@ export default {
     const accept = request.headers.get("Accept") || "";
     const userAgent = request.headers.get("user-agent") || "";
 
-    // ---- Ваши 5 серверов ----
+    // ---- 5 серверов (LTE обновлён на grpc) ----
     const nodes = [
       {
         tag: "de-1",
@@ -16,7 +16,9 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇩🇪 Германия⚡"
+        remarks: "🇩🇪 Германия",
+        network: "tcp",
+        flow: "xtls-rprx-vision"
       },
       {
         tag: "se-1",
@@ -27,7 +29,9 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇸🇪 Швеция⚡"
+        remarks: "🇸🇪 Швеция",
+        network: "tcp",
+        flow: "xtls-rprx-vision"
       },
       {
         tag: "pl-1",
@@ -38,7 +42,9 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇵🇱 Польша"
+        remarks: "🇵🇱 Польша",
+        network: "tcp",
+        flow: "xtls-rprx-vision"
       },
       {
         tag: "ru-1",
@@ -49,23 +55,72 @@ export default {
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇷🇺 Россия"
+        remarks: "🇷🇺 Youtube",
+        network: "tcp",
+        flow: "xtls-rprx-vision"
       },
       {
         tag: "lte-1",
-        address: "hole3.datanode-internal.net",
-        port: 9443,
+        address: "hole-nn.datanode-internal.net",
+        port: 443,
         id: "9d5e7e04-53e4-4d98-bb26-236c907078a5",
         serverName: "ads.x5.ru",
         publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
         shortId: "abbcd128",
         fingerprint: "qq",
-        remarks: "🇩🇪 LTE №1 ⚡"
+        remarks: "🇩🇪 LTE #1",
+        network: "grpc",
+        flow: "" // пусто, т.к. в ссылке flow=
       }
     ];
 
-    // ---- Функция генерации конфига для Sing-box ----
-    function makeConfig({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, remarks }) {
+    // ---- Функция генерации конфига ----
+    function makeConfig({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, remarks, network, flow }) {
+      const outbound = {
+        tag: tag,
+        protocol: "vless",
+        settings: {
+          vnext: [
+            {
+              address: address,
+              port: port,
+              users: [
+                {
+                  id: id,
+                  encryption: "none"
+                }
+              ]
+            }
+          ]
+        },
+        streamSettings: {
+          network: network,
+          security: "reality",
+          realitySettings: {
+            serverName: serverName,
+            show: false,
+            publicKey: publicKey,
+            shortId: shortId,
+            fingerprint: fingerprint
+          }
+        }
+      };
+      // Добавляем flow только если он не пустой
+      if (flow) {
+        outbound.settings.vnext[0].users[0].flow = flow;
+      }
+      // Для grpc добавляем пустой grpcSettings (по аналогии с tcpSettings)
+      if (network === "grpc") {
+        outbound.streamSettings.grpcSettings = {};
+      } else {
+        outbound.streamSettings.tcpSettings = {};
+      }
+      return outbound;
+    }
+
+    // ---- Полный объект конфига (как в vpn.json) ----
+    function makeFullConfig(node) {
+      const outbound = makeConfig(node);
       return {
         dns: {
           servers: ["1.1.1.1", "1.0.0.1"],
@@ -93,57 +148,27 @@ export default {
           enableConcurrency: true,
           probeInterval: "1m",
           probeUrl: "https://www.google.com/generate_204",
-          subjectSelector: [tag]
+          subjectSelector: [node.tag]
         },
         outbounds: [
-          {
-            tag: tag,
-            protocol: "vless",
-            settings: {
-              vnext: [
-                {
-                  address: address,
-                  port: port,
-                  users: [
-                    {
-                      id: id,
-                      encryption: "none",
-                      flow: "xtls-rprx-vision"
-                    }
-                  ]
-                }
-              ]
-            },
-            streamSettings: {
-              network: "tcp",
-              tcpSettings: {},
-              security: "reality",
-              realitySettings: {
-                serverName: serverName,
-                show: false,
-                publicKey: publicKey,
-                shortId: shortId,
-                fingerprint: fingerprint
-              }
-            }
-          },
+          outbound,
           { tag: "direct", protocol: "freedom" },
           { tag: "block", protocol: "blackhole" }
         ],
-        remarks: remarks,
+        remarks: node.remarks,
         routing: {
           domainMatcher: "hybrid",
           domainStrategy: "IPIfNonMatch",
           balancers: [
             {
-              tag: `bal_${tag}`,
-              selector: [tag],
+              tag: `bal_${node.tag}`,
+              selector: [node.tag],
               fallbackTag: "direct",
               strategy: {
                 type: "leastLoad",
                 settings: {
                   baselines: ["4s"],
-                  costs: [{ match: tag, regexp: false, value: 1 }],
+                  costs: [{ match: node.tag, regexp: false, value: 1 }],
                   expected: 1,
                   maxRTT: "6s"
                 }
@@ -166,7 +191,7 @@ export default {
               type: "field",
               inboundTag: ["socks", "http"],
               network: "tcp,udp",
-              balancerTag: `bal_${tag}`
+              balancerTag: `bal_${node.tag}`
             }
           ]
         }
@@ -179,28 +204,26 @@ export default {
                    || userAgent.includes('V2Ray') 
                    || userAgent.includes('Happ') 
                    || userAgent.includes('sing-box')
-                   || userAgent.includes('INCY');
+                   || userAgent.includes('INCy');
 
     if (wantsJson) {
-      const configs = nodes.map(n => makeConfig(n));
+      const configs = nodes.map(n => makeFullConfig(n));
       const expireTimestamp = 1899589200; // 13.03.2030
 
       return new Response(JSON.stringify(configs, null, 2), {
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Access-Control-Allow-Origin": "*",
-          // ---- Заголовки подписки ----
           "Profile-Title": "Ultra VPN Plus",
           "Subscription-Status": "active",
           "Subscription-Traffic": "357 GB / ∞",
           "Subscription-Expire": String(expireTimestamp),
-          // Стандартный заголовок для многих клиентов
           "subscription-userinfo": `upload=0; download=383331401728; total=0; expire=${expireTimestamp}`
         }
       });
     }
 
-    // ---- ВЕБ-ИНТЕРФЕЙС (минималистичный дашборд) ----
+    // ---- ВЕБ-ИНТЕРФЕЙС ----
     const html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
