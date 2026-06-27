@@ -1,6 +1,5 @@
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
     const userAgent = request.headers.get("user-agent") || "";
     const isClient = userAgent.includes("V2Ray") || userAgent.includes("Happ") || userAgent.includes("sing-box");
 
@@ -12,29 +11,29 @@ export default {
       { addr: "hole3.datanode-internal.net", port: 9443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", pk: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", sid: "abbcd128", name: "🇩🇪 LTE #1" }
     ];
 
-    // Если это VPN-клиент — отдаем JSON
     if (isClient) {
-      const jsonResponse = {
-        "configs": configs.map(c => ({
-          "remarks": c.name,
-          "protocol": "vless",
-          "address": c.addr,
-          "port": c.port,
-          "id": c.id,
-          "encryption": "none",
-          "flow": "xtls-rprx-vision",
-          "streamSettings": {
-            "network": "tcp",
-            "security": "reality",
-            "realitySettings": {
-              "publicKey": c.pk,
-              "serverName": c.serverName,
-              "shortId": c.sid,
-              "fingerprint": "qq"
-            }
+      // Формируем полный массив JSON с полной структурой VLESS Reality
+      const jsonResponse = configs.map(c => ({
+        "remarks": c.name,
+        "protocol": "vless",
+        "settings": {
+          "vnext": [{
+            "address": c.addr,
+            "port": c.port,
+            "users": [{ "id": c.id, "encryption": "none", "flow": "xtls-rprx-vision" }]
+          }]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "publicKey": c.pk,
+            "serverName": c.serverName,
+            "shortId": c.sid,
+            "fingerprint": "qq"
           }
-        }))
-      };
+        }
+      }));
 
       return new Response(JSON.stringify(jsonResponse), {
         headers: {
@@ -45,8 +44,7 @@ export default {
       });
     }
 
-    // Если это браузер — показываем Dashboard
-    const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Ultra VPN Plus | Dashboard</title><style>body{font-family:sans-serif;background:#09090b;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.card{background:#161b22;padding:40px;border-radius:20px;border:1px solid #27272a;text-align:center;width:320px;}</style></head><body><div class="card"><h1>🚀 Ultra VPN Plus</h1><p>Подписка активна</p><div style="background:#27272a;padding:15px;border-radius:10px;">Использовано: 357 GB / ∞</div></div></body></html>`;
-    return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+    // Если это браузер — оставляем твой красивый Dashboard
+    return new Response(`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Dashboard</title><style>body{font-family:sans-serif;background:#09090b;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.card{background:#161b22;padding:40px;border-radius:20px;border:1px solid #27272a;text-align:center;}</style></head><body><div class="card"><h1>🚀 Ultra VPN Plus</h1><p>JSON API активен</p></div></body></html>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
   }
 };
