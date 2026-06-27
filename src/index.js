@@ -6,7 +6,7 @@ export default {
     // или строгого соответствия вложенности vnext/users.
     const configs = [
       {
-        "remarks": "🇩🇪 Германия",
+        "remarks": "🇩🇪 хуй говно",
         "protocol": "vless",
         "address": "de-new.datanode-internal.net",
         "port": 443,
