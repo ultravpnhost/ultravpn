@@ -232,7 +232,7 @@ export default {
                    || userAgent.includes('V2Ray') 
                    || userAgent.includes('Happ') 
                    || userAgent.includes('sing-box')
-                   || userAgent.includes('INCy');
+                   || userAgent.includes('INCY');
 
     if (wantsJson) {
       const configs = nodes.map(n => makeFullConfig(n));
@@ -249,7 +249,7 @@ export default {
         "subscription-userinfo": `upload=0; download=${usedTrafficBytes}; total=0; expire=${expireTimestamp}`
       };
 
-      if (userAgent.includes('INCy')) {
+      if (userAgent.includes('INCY')) {
         const responseBody = {
           servers: configs,
           subscription: {
@@ -514,7 +514,7 @@ export default {
             </div>
             <div class="announcement">
                 <span class="announcement-icon">📢</span>
-                <span class="announcement-text">🔥 Новые серверы в Германии и LTE! Подписка активна до 2030 года. Вопросы в @fhcsupport</span>
+                <span class="announcement-text">🔥 Новые серверы в Германии и LTE!</span>
             </div>
             <button class="btn-status" id="statusBtn">📊 Статус серверов</button>
             <div class="footer">
