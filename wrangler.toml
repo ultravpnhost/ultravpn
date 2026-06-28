@@ -1,3 +1,8 @@
 name = "sub"
 main = "src/index.js"
 compatibility_date = "2026-06-27"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "7e42961ac2884f16a91759d5d35de8cb"
+preview_id = ""
