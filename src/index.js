@@ -30,6 +30,36 @@ export default {
 
     const subscriptions = await getSubscriptions();
 
+    // ---- КОНСТАНТЫ ДЛЯ ТРАФИКА ----
+    const START_DATE = new Date('2026-06-28T00:00:00Z');
+    const BASE_TRAFFIC_GB = 0;
+
+    function getHourlyIncrement(date) {
+      const seed = date.getFullYear() * 1000000 + (date.getMonth() + 1) * 10000 + date.getDate() * 100 + date.getHours();
+      const x = Math.sin(seed) * 10000;
+      const r = x - Math.floor(x);
+      const dayOfYear = Math.floor((date - START_DATE) / (1000 * 60 * 60 * 24));
+      const isBonusDay = (dayOfYear % 10 === 0 && dayOfYear > 0);
+      if (isBonusDay) {
+        return Math.floor(r * 3) + 10; // 10-12 GB
+      } else {
+        return Math.floor(r * 2) + 1; // 1-2 GB
+      }
+    }
+
+    function getCurrentTrafficGB() {
+      const now = new Date();
+      const diffTime = now - START_DATE;
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      if (diffHours <= 0) return BASE_TRAFFIC_GB;
+      let total = BASE_TRAFFIC_GB;
+      for (let h = 1; h <= diffHours; h++) {
+        const hourDate = new Date(START_DATE.getTime() + h * 60 * 60 * 1000);
+        total += getHourlyIncrement(hourDate);
+      }
+      return total;
+    }
+
     // ---- АДМИН-ПАНЕЛЬ ----
     if (path === '/admin') {
       const params = new URLSearchParams(url.search);
@@ -57,7 +87,6 @@ export default {
             createdAt: Date.now()
           };
           await saveSubscriptions(subscriptions);
-          // Возвращаем в админку с обновлённым списком
           return new Response(getAdminPanel(subscriptions), {
             headers: { "Content-Type": "text/html; charset=utf-8" }
           });
@@ -80,7 +109,6 @@ export default {
         }
 
         await saveSubscriptions(subscriptions);
-        // Возвращаем в админку с обновлённым списком
         return new Response(getAdminPanel(subscriptions), {
           headers: { "Content-Type": "text/html; charset=utf-8" }
         });
@@ -106,8 +134,11 @@ export default {
       
       const expireTimestamp = sub.expire ? Math.floor(sub.expire / 1000) : 0;
       const title = isActive ? (sub.name || 'Ultra VPN Plus') : 'Подписка отключена';
-      const traffic = isActive ? '876 GB / ∞' : '0 GB / 0 GB';
-      const trafficBytes = isActive ? 876000000000 : 0;
+      
+      // ---- ТРАФИК ТОЛЬКО ДЛЯ АКТИВНЫХ ПОДПИСОК ----
+      const usedTraffic = isActive ? getCurrentTrafficGB() : 0;
+      const traffic = isActive ? usedTraffic + ' GB / ∞' : '0 GB / 0 GB';
+      const trafficBytes = isActive ? usedTraffic * 1024 * 1024 * 1024 : 0;
 
       const headers = {
         'Content-Type': 'application/json; charset=utf-8',
@@ -122,34 +153,14 @@ export default {
       return new Response(JSON.stringify(configs, null, 2), { headers });
     }
 
-    // ---- ОСНОВНАЯ ПОДПИСКА (корень) ----
-    if (path === '/' || path === '') {
-      const isBrowser = !accept.includes('application/json') && 
-                        !userAgent.includes('V2Ray') && 
-                        !userAgent.includes('Happ') && 
-                        !userAgent.includes('sing-box') && 
-                        !userAgent.includes('INCY');
+    // ---- ВЕБ-ИНТЕРФЕЙС (корень) ----
+    const usedTrafficDisplay = getCurrentTrafficGB();
+    const sub = subscriptions['default'] || { name: 'Ultra VPN Plus', active: true, expire: null };
+    const isActive = sub.active && (sub.expire === null || Date.now() < sub.expire);
 
-      if (isBrowser) {
-        return new Response(getMainPage(), {
-          headers: { 'Content-Type': 'text/html; charset=utf-8' }
-        });
-      }
-
-      const configs = getRealNodes().map(makeFullConfig);
-      const headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Profile-Title': 'Ultra VPN Plus',
-        'Subscription-Status': 'active',
-        'Subscription-Traffic': '876 GB / ∞',
-        'Subscription-Expire': '1899589200',
-        'subscription-userinfo': 'upload=0; download=876000000000; total=0; expire=1899589200'
-      };
-      return new Response(JSON.stringify(configs, null, 2), { headers });
-    }
-
-    return new Response('Страница не найдена', { status: 404 });
+    return new Response(getMainPage(isActive, usedTrafficDisplay, sub), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
   }
 };
 
@@ -284,6 +295,8 @@ function getAdminPanel(subscriptions) {
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Админ</title><style>body{background:#0b0e14;color:#fff;font-family:sans-serif;padding:20px}.container{max-width:700px;margin:0 auto}.card{background:#18181b;padding:24px;border-radius:28px;border:1px solid #27272a;margin-bottom:20px}h2{margin-bottom:4px}.subtitle{color:#8b95a9;font-size:14px;margin-bottom:20px}.form-group{margin-bottom:16px}label{display:block;color:#8b95a9;font-size:14px}input,select{width:100%;padding:10px;border-radius:10px;border:1px solid #27272a;background:#111;color:#fff;font-size:14px}.btn{padding:10px 20px;border-radius:99px;border:none;font-weight:600;cursor:pointer}.btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{opacity:0.8}.sub-item{background:#111;padding:16px;border-radius:12px;border:1px solid #1e1e21;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}.sub-item:hover{border-color:#3f3f46}.actions{display:flex;gap:6px}.actions button{padding:6px 12px;border-radius:99px;border:none;cursor:pointer;font-size:14px;transition:0.2s}.actions button:hover{transform:scale(1.05)}.btn-green{background:#22c55e33;color:#22c55e}.btn-green:hover{background:#22c55e55}.btn-red{background:#ef444433;color:#ef4444}.btn-red:hover{background:#ef444455}.btn-yellow{background:#f59e0b33;color:#f59e0b}.btn-yellow:hover{background:#f59e0b55}.btn-gray{background:#1e293b;color:#8b95a9}.btn-gray:hover{background:#2d3b52}.row{display:flex;gap:10px;flex-wrap:wrap}.flex-1{flex:1}.back-link{color:#58a6ff;text-decoration:none;display:inline-block;margin-bottom:16px}.back-link:hover{text-decoration:underline}</style></head><body><div class="container"><a href="/" class="back-link">← На главную</a><div class="card"><h2>🔧 Админ-панель</h2><div class="subtitle">Управление подписками</div><form method="POST" action="/admin?pass=18032014"><input type="hidden" name="action" value="create"><div class="row"><div class="flex-1"><div class="form-group"><label>Название подписки</label><input type="text" name="subscription_name" placeholder="client1" required></div></div><div class="flex-1"><div class="form-group"><label>Срок</label><select name="period"><option value="30">1 месяц</option><option value="90">3 месяца</option><option value="180">6 месяцев</option><option value="365">1 год</option><option value="forever">Навсегда</option></select></div></div></div><button type="submit" class="btn btn-primary" style="width:100%;padding:14px">➕ Создать подписку</button></form></div><div class="card"><h3 style="font-size:16px;margin-bottom:16px">📋 Список подписок</h3>' + (list || '<div style="color:#8b95a9;text-align:center;padding:20px">Нет подписок</div>') + '</div></div><script>function action(id,a){if(a==="delete"&&!confirm("Удалить подписку?"))return;var f=document.createElement("form");f.method="POST";f.action="/admin?pass=18032014";f.innerHTML=\'<input type="hidden" name="action" value="\'+a+\'"><input type="hidden" name="subscription_id" value="\'+id+\'">\';document.body.appendChild(f);f.submit()}function extend(id){var d=prompt("На сколько дней продлить?","30");if(d){var f=document.createElement("form");f.method="POST";f.action="/admin?pass=18032014";f.innerHTML=\'<input type="hidden" name="action" value="extend"><input type="hidden" name="subscription_id" value="\'+id+\'"><input type="hidden" name="period" value="\'+d+\'">\';document.body.appendChild(f);f.submit()}}</script></body></html>';
 }
 
-function getMainPage() {
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ultra VPN Plus</title><style>body{background:#0b0e14;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center}.icon{font-size:60px}.title{font-size:26px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.badge{display:inline-block;background:rgba(34,197,94,0.15);color:#22c55e;padding:4px 18px;border-radius:99px;font-size:13px;margin-top:8px}.stats{background:#111;padding:18px;border-radius:18px;border:1px solid #1e1e21;margin:20px 0}.stat-item{display:flex;justify-content:space-between;padding:8px 0}.stat-item+.stat-item{border-top:1px solid #1e1e21}.stat-label{color:#8b95a9}.stat-value{font-weight:600}.stat-value .date{color:#fca5a5}.footer{color:#5a5f6b;font-size:14px;margin-top:16px}a{color:#58a6ff;text-decoration:none}</style></head><body><div class="card"><div class="icon">🚀</div><div class="title">Ultra VPN Plus</div><div class="badge">● Активен</div><div class="stats"><div class="stat-item"><span class="stat-label">📦 Трафик</span><span class="stat-value">876 GB / ∞</span></div><div class="stat-item"><span class="stat-label">📅 Истекает</span><span class="stat-value"><span class="date">13.03.2030</span></span></div></div><div class="footer">Вопросы? <a href="https://t.me/fhcsupport">@fhcsupport</a></div></div></body></html>';
+function getMainPage(isActive, usedTraffic, sub) {
+  const expireDate = sub.expire ? new Date(sub.expire).toLocaleDateString('ru-RU') : 'Навсегда';
+  
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ultra VPN Plus</title><style>body{background:#0b0e14;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center}.icon{font-size:60px}.title{font-size:26px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.badge{display:inline-block;background:' + (isActive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + ';color:' + (isActive ? '#22c55e' : '#ef4444') + ';padding:4px 18px;border-radius:99px;font-size:13px;margin-top:8px;border:1px solid ' + (isActive ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '}.stats{background:#111;padding:18px;border-radius:18px;border:1px solid #1e1e21;margin:20px 0}.stat-item{display:flex;justify-content:space-between;padding:8px 0}.stat-item+.stat-item{border-top:1px solid #1e1e21}.stat-label{color:#8b95a9}.stat-value{font-weight:600}.stat-value .date{color:#fca5a5}.expired-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-bottom:20px}.expired-box .big-icon{font-size:48px;display:block}.expired-box .text{font-size:16px;font-weight:600;color:#ef4444}.expired-box .sub{font-size:14px;color:#8b95a9;margin-top:4px}.footer{color:#5a5f6b;font-size:14px;margin-top:16px}a{color:#58a6ff;text-decoration:none}</style></head><body><div class="card"><div class="icon">🚀</div><div class="title">Ultra VPN Plus</div><div class="badge">' + (isActive ? '● Активен' : '● Подписка истекла') + '</div>' + (isActive ? '<div class="stats"><div class="stat-item"><span class="stat-label">📦 Трафик</span><span class="stat-value">' + usedTraffic + ' GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span></div><div class="stat-item"><span class="stat-label">📅 Истекает</span><span class="stat-value"><span class="date">' + expireDate + '</span></span></div></div>' : '<div class="expired-box"><span class="big-icon">⛔</span><div class="text">Подписка истекла</div><div class="sub">Продление: <a href="https://t.me/fhcsupport" style="color:#58a6ff;">@fhcsupport</a></div></div>') + '<div class="footer">Вопросы? <a href="https://t.me/fhcsupport">@fhcsupport</a></div></div></body></html>';
 }
