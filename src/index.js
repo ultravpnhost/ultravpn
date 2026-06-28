@@ -5,7 +5,7 @@ export default {
     const accept = request.headers.get("Accept") || "";
     const userAgent = request.headers.get("user-agent") || "";
 
-    // ---- Константы для трафика (10-30 GB в день) ----
+    // ---- Константы для трафика ----
     const START_DATE = new Date('2026-06-20T00:00:00Z');
     const BASE_TRAFFIC_GB = 806;
 
@@ -30,80 +30,19 @@ export default {
     }
 
     const usedTraffic = getCurrentTrafficGB();
-    const expireTimestamp = 1899589200; // 13.03.2030
+    const expireTimestamp = 1899589200;
     const subscriptionTitle = "Ultra VPN Plus";
 
-    // ---- Серверы (с флагами для клиентов) ----
+    // ---- Серверы ----
     const nodes = [
-      {
-        tag: "de-1",
-        address: "de-new.datanode-internal.net",
-        port: 443,
-        id: "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        serverName: "ads.x5.ru",
-        publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
-        shortId: "abbcd128",
-        fingerprint: "qq",
-        remarks: "🇩🇪 Германия",
-        network: "tcp",
-        flow: "xtls-rprx-vision"
-      },
-      {
-        tag: "se-1",
-        address: "se-new.datanode-internal.net",
-        port: 443,
-        id: "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        serverName: "ads.x5.ru",
-        publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
-        shortId: "abbcd128",
-        fingerprint: "qq",
-        remarks: "🇸🇪 Швеция",
-        network: "tcp",
-        flow: "xtls-rprx-vision"
-      },
-      {
-        tag: "pl-1",
-        address: "pl.datanode-internal.net",
-        port: 443,
-        id: "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        serverName: "sun9-35.userapi.com",
-        publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
-        shortId: "abbcd128",
-        fingerprint: "qq",
-        remarks: "🇵🇱 Польша",
-        network: "tcp",
-        flow: "xtls-rprx-vision"
-      },
-      {
-        tag: "ru-1",
-        address: "ru.datanode-internal.net",
-        port: 443,
-        id: "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        serverName: "sun9-38.userapi.com",
-        publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
-        shortId: "abbcd128",
-        fingerprint: "qq",
-        remarks: "🇷🇺 Россия",
-        network: "tcp",
-        flow: "xtls-rprx-vision"
-      },
-      {
-        tag: "lte-1",
-        address: "hole-nn.datanode-internal.net",
-        port: 443,
-        id: "9d5e7e04-53e4-4d98-bb26-236c907078a5",
-        serverName: "ads.x5.ru",
-        publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
-        shortId: "abbcd128",
-        fingerprint: "qq",
-        remarks: "🇩🇪 LTE #1",
-        network: "grpc",
-        flow: "",
-        grpcServiceName: "ads.x5.ru"
-      }
+      { tag: "de-1", address: "de-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 Германия", network: "tcp", flow: "xtls-rprx-vision" },
+      { tag: "se-1", address: "se-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇸🇪 Швеция", network: "tcp", flow: "xtls-rprx-vision" },
+      { tag: "pl-1", address: "pl.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-35.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇵🇱 Польша", network: "tcp", flow: "xtls-rprx-vision" },
+      { tag: "ru-1", address: "ru.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-38.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇷🇺 Россия", network: "tcp", flow: "xtls-rprx-vision" },
+      { tag: "lte-1", address: "hole-nn.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 LTE #1", network: "grpc", flow: "", grpcServiceName: "ads.x5.ru" }
     ];
 
-    // ---- Функции генерации конфигов (для /json) ----
+    // ---- Функции для генерации JSON ----
     function makeOutbound({ tag, address, port, id, serverName, publicKey, shortId, fingerprint, network, flow, grpcServiceName }) {
       const outbound = {
         tag: tag,
@@ -134,13 +73,9 @@ export default {
           }
         }
       };
-      if (flow) {
-        outbound.settings.vnext[0].users[0].flow = flow;
-      }
+      if (flow) outbound.settings.vnext[0].users[0].flow = flow;
       if (network === "grpc") {
-        outbound.streamSettings.grpcSettings = {
-          serviceName: grpcServiceName || ""
-        };
+        outbound.streamSettings.grpcSettings = { serviceName: grpcServiceName || "" };
       } else {
         outbound.streamSettings.tcpSettings = {};
       }
@@ -150,27 +85,10 @@ export default {
     function makeFullConfig(node) {
       const outbound = makeOutbound(node);
       return {
-        dns: {
-          servers: ["1.1.1.1", "1.0.0.1"],
-          queryStrategy: "UseIP"
-        },
+        dns: { servers: ["1.1.1.1", "1.0.0.1"], queryStrategy: "UseIP" },
         inbounds: [
-          {
-            tag: "socks",
-            port: 10808,
-            listen: "127.0.0.1",
-            protocol: "socks",
-            settings: { udp: true, auth: "noauth" },
-            sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] }
-          },
-          {
-            tag: "http",
-            port: 10809,
-            listen: "127.0.0.1",
-            protocol: "http",
-            settings: { allowTransparent: false },
-            sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] }
-          }
+          { tag: "socks", port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true, auth: "noauth" }, sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] } },
+          { tag: "http", port: 10809, listen: "127.0.0.1", protocol: "http", settings: { allowTransparent: false }, sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] } }
         ],
         observatory: {
           enableConcurrency: true,
@@ -205,22 +123,9 @@ export default {
           ],
           rules: [
             { type: "field", protocol: ["bittorrent"], outboundTag: "block" },
-            {
-              domain: [
-                "domain:mtalk.google.com",
-                "domain:push.apple.com",
-                "domain:api.push.apple.com"
-              ],
-              outboundTag: "direct",
-              type: "field"
-            },
+            { domain: ["domain:mtalk.google.com", "domain:push.apple.com", "domain:api.push.apple.com"], outboundTag: "direct", type: "field" },
             { ip: ["17.0.0.0/8"], outboundTag: "direct", type: "field" },
-            {
-              type: "field",
-              inboundTag: ["socks", "http"],
-              network: "tcp,udp",
-              balancerTag: `bal_${node.tag}`
-            }
+            { type: "field", inboundTag: ["socks", "http"], network: "tcp,udp", balancerTag: `bal_${node.tag}` }
           ]
         }
       };
@@ -232,24 +137,24 @@ export default {
                    || userAgent.includes('V2Ray') 
                    || userAgent.includes('Happ') 
                    || userAgent.includes('sing-box')
-                   || userAgent.includes('INCY');
+                   || userAgent.includes('INCy');
 
     if (wantsJson) {
       const configs = nodes.map(n => makeFullConfig(n));
       const usedTrafficBytes = usedTraffic * 1024 * 1024 * 1024;
 
+      // ЕДИНСТВЕННЫЙ заголовок с названием
       const commonHeaders = {
         "Content-Type": "application/json; charset=utf-8",
         "Access-Control-Allow-Origin": "*",
         "Profile-Title": subscriptionTitle,
-        "profile-title": subscriptionTitle,
         "Subscription-Status": "active",
         "Subscription-Traffic": usedTraffic + " GB / ∞",
         "Subscription-Expire": String(expireTimestamp),
         "subscription-userinfo": `upload=0; download=${usedTrafficBytes}; total=0; expire=${expireTimestamp}`
       };
 
-      if (userAgent.includes('INCY')) {
+      if (userAgent.includes('INCy')) {
         const responseBody = {
           servers: configs,
           subscription: {
@@ -259,21 +164,16 @@ export default {
             status: "active"
           }
         };
-        return new Response(JSON.stringify(responseBody, null, 2), {
-          headers: commonHeaders
-        });
+        return new Response(JSON.stringify(responseBody, null, 2), { headers: commonHeaders });
       } else {
-        return new Response(JSON.stringify(configs, null, 2), {
-          headers: commonHeaders
-        });
+        return new Response(JSON.stringify(configs, null, 2), { headers: commonHeaders });
       }
     }
 
-    // ---- Подготовка данных для веб-интерфейса ----
+    // ---- ВЕБ-ИНТЕРФЕЙС (без изменений) ----
     const displayNames = nodes.map(n => n.remarks.replace(/^[^\s]+\s/, ''));
     const serverDataJson = JSON.stringify(displayNames);
 
-    // ---- ВЕБ-ИНТЕРФЕЙС (без изменений) ----
     const html = String.raw`
 <!DOCTYPE html>
 <html lang="ru">
@@ -514,7 +414,7 @@ export default {
             </div>
             <div class="announcement">
                 <span class="announcement-icon">📢</span>
-                <span class="announcement-text">🔥 Новые серверы в Германии и LTE!</span>
+                <span class="announcement-text">🔥 Новые серверы в Германии и LTE! Подписка активна до 2030 года. Вопросы в @fhcsupport</span>
             </div>
             <button class="btn-status" id="statusBtn">📊 Статус серверов</button>
             <div class="footer">
