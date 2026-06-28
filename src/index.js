@@ -7,16 +7,43 @@ export default {
     const method = request.method;
 
     // ============================================================
-    // ХРАНИЛИЩЕ (в памяти, при перезапуске сбрасывается)
-    // Для продакшена использовать KV
+    // ФУНКЦИИ ДЛЯ РАБОТЫ С KV
     // ============================================================
-    let subscriptions = {
-      'default': {
-        active: true,
-        expire: null, // null = навсегда
-        createdAt: Date.now()
+    async function getSubscriptions() {
+      try {
+        const data = await env.KV.get('subscriptions', 'json');
+        if (!data) {
+          const defaultData = {
+            'default': {
+              active: true,
+              expire: null,
+              createdAt: Date.now()
+            }
+          };
+          await env.KV.put('subscriptions', JSON.stringify(defaultData));
+          return defaultData;
+        }
+        return data;
+      } catch (e) {
+        // Если KV недоступен, используем память
+        console.error('KV error:', e);
+        return {
+          'default': {
+            active: true,
+            expire: null,
+            createdAt: Date.now()
+          }
+        };
       }
-    };
+    }
+
+    async function saveSubscriptions(data) {
+      await env.KV.put('subscriptions', JSON.stringify(data));
+    }
+
+    // Получаем данные из KV
+    const subscriptions = await getSubscriptions();
+    const sub = subscriptions['default'] || { active: true, expire: null };
 
     // ============================================================
     // АДМИН-ПАНЕЛЬ
@@ -71,6 +98,8 @@ export default {
             break;
         }
 
+        await saveSubscriptions(subscriptions);
+
         return new Response(JSON.stringify({ success: true, action, subId, subscription: sub }), {
           headers: { "Content-Type": "application/json; charset=utf-8" }
         });
@@ -119,8 +148,6 @@ export default {
     const expireTimestamp = 1899589200;
     const subscriptionTitle = "Ultra VPN Plus";
 
-    // ---- Проверяем статус подписки ----
-    const sub = subscriptions['default'] || { active: true, expire: null };
     const isActive = sub.active && (sub.expire === null || Date.now() < sub.expire);
     const isExpired = !isActive;
 
