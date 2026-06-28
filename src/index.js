@@ -41,9 +41,9 @@ export default {
       const dayOfYear = Math.floor((date - START_DATE) / (1000 * 60 * 60 * 24));
       const isBonusDay = (dayOfYear % 10 === 0 && dayOfYear > 0);
       if (isBonusDay) {
-        return Math.floor(r * 3) + 10; // 10-12 GB
+        return Math.floor(r * 3) + 10;
       } else {
-        return Math.floor(r * 2) + 1; // 1-2 GB
+        return Math.floor(r * 2) + 1;
       }
     }
 
@@ -133,9 +133,9 @@ export default {
       const configs = nodes.map(makeFullConfig);
       
       const expireTimestamp = sub.expire ? Math.floor(sub.expire / 1000) : 0;
-      const title = isActive ? (sub.name || 'Ultra VPN Plus') : 'Подписка отключена';
+      // НАЗВАНИЕ ВСЕГДА ULTRA VPN
+      const title = isActive ? 'Ultra VPN' : 'Подписка отключена';
       
-      // ---- ТРАФИК ТОЛЬКО ДЛЯ АКТИВНЫХ ПОДПИСОК ----
       const usedTraffic = isActive ? getCurrentTrafficGB() : 0;
       const traffic = isActive ? usedTraffic + ' GB / ∞' : '0 GB / 0 GB';
       const trafficBytes = isActive ? usedTraffic * 1024 * 1024 * 1024 : 0;
@@ -155,7 +155,7 @@ export default {
 
     // ---- ВЕБ-ИНТЕРФЕЙС (корень) ----
     const usedTrafficDisplay = getCurrentTrafficGB();
-    const sub = subscriptions['default'] || { name: 'Ultra VPN Plus', active: true, expire: null };
+    const sub = subscriptions['default'] || { name: 'Основная', active: true, expire: null };
     const isActive = sub.active && (sub.expire === null || Date.now() < sub.expire);
 
     return new Response(getMainPage(isActive, usedTrafficDisplay, sub), {
@@ -298,5 +298,5 @@ function getAdminPanel(subscriptions) {
 function getMainPage(isActive, usedTraffic, sub) {
   const expireDate = sub.expire ? new Date(sub.expire).toLocaleDateString('ru-RU') : 'Навсегда';
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ultra VPN Plus</title><style>body{background:#0b0e14;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center}.icon{font-size:60px}.title{font-size:26px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.badge{display:inline-block;background:' + (isActive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + ';color:' + (isActive ? '#22c55e' : '#ef4444') + ';padding:4px 18px;border-radius:99px;font-size:13px;margin-top:8px;border:1px solid ' + (isActive ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '}.stats{background:#111;padding:18px;border-radius:18px;border:1px solid #1e1e21;margin:20px 0}.stat-item{display:flex;justify-content:space-between;padding:8px 0}.stat-item+.stat-item{border-top:1px solid #1e1e21}.stat-label{color:#8b95a9}.stat-value{font-weight:600}.stat-value .date{color:#fca5a5}.expired-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-bottom:20px}.expired-box .big-icon{font-size:48px;display:block}.expired-box .text{font-size:16px;font-weight:600;color:#ef4444}.expired-box .sub{font-size:14px;color:#8b95a9;margin-top:4px}.footer{color:#5a5f6b;font-size:14px;margin-top:16px}a{color:#58a6ff;text-decoration:none}</style></head><body><div class="card"><div class="icon">🚀</div><div class="title">Ultra VPN Plus</div><div class="badge">' + (isActive ? '● Активен' : '● Подписка истекла') + '</div>' + (isActive ? '<div class="stats"><div class="stat-item"><span class="stat-label">📦 Трафик</span><span class="stat-value">' + usedTraffic + ' GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span></div><div class="stat-item"><span class="stat-label">📅 Истекает</span><span class="stat-value"><span class="date">' + expireDate + '</span></span></div></div>' : '<div class="expired-box"><span class="big-icon">⛔</span><div class="text">Подписка истекла</div><div class="sub">Продление: <a href="https://t.me/fhcsupport" style="color:#58a6ff;">@fhcsupport</a></div></div>') + '<div class="footer">Вопросы? <a href="https://t.me/fhcsupport">@fhcsupport</a></div></div></body></html>';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ultra VPN</title><style>body{background:#0b0e14;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center}.icon{font-size:60px}.title{font-size:26px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.badge{display:inline-block;background:' + (isActive ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') + ';color:' + (isActive ? '#22c55e' : '#ef4444') + ';padding:4px 18px;border-radius:99px;font-size:13px;margin-top:8px;border:1px solid ' + (isActive ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') + '}.stats{background:#111;padding:18px;border-radius:18px;border:1px solid #1e1e21;margin:20px 0}.stat-item{display:flex;justify-content:space-between;padding:8px 0}.stat-item+.stat-item{border-top:1px solid #1e1e21}.stat-label{color:#8b95a9}.stat-value{font-weight:600}.stat-value .date{color:#fca5a5}.expired-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-bottom:20px}.expired-box .big-icon{font-size:48px;display:block}.expired-box .text{font-size:16px;font-weight:600;color:#ef4444}.expired-box .sub{font-size:14px;color:#8b95a9;margin-top:4px}.footer{color:#5a5f6b;font-size:14px;margin-top:16px}a{color:#58a6ff;text-decoration:none}</style></head><body><div class="card"><div class="icon">🚀</div><div class="title">Ultra VPN</div><div class="badge">' + (isActive ? '● Активен' : '● Подписка истекла') + '</div>' + (isActive ? '<div class="stats"><div class="stat-item"><span class="stat-label">📦 Трафик</span><span class="stat-value">' + usedTraffic + ' GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span></div><div class="stat-item"><span class="stat-label">📅 Истекает</span><span class="stat-value"><span class="date">' + expireDate + '</span></span></div></div>' : '<div class="expired-box"><span class="big-icon">⛔</span><div class="text">Подписка истекла</div><div class="sub">Продление: <a href="https://t.me/fhcsupport" style="color:#58a6ff;">@fhcsupport</a></div></div>') + '<div class="footer">Вопросы? <a href="https://t.me/fhcsupport">@fhcsupport</a></div></div></body></html>';
 }
