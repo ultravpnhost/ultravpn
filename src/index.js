@@ -6,7 +6,6 @@ export default {
     const userAgent = request.headers.get("user-agent") || "";
     const method = request.method;
 
-    // ---- ФУНКЦИИ ДЛЯ KV ----
     async function getSubscriptions() {
       try {
         const data = await env.KV.get('subscriptions', 'json');
@@ -31,7 +30,6 @@ export default {
 
     const subscriptions = await getSubscriptions();
 
-    // ---- КОНСТАНТЫ ДЛЯ ТРАФИКА ----
     const START_DATE = new Date('2026-06-28T00:00:00Z');
     const BASE_TRAFFIC_GB = 0;
 
@@ -65,7 +63,6 @@ export default {
       return total;
     }
 
-    // ---- ФУНКЦИЯ ДЛЯ ТРАФИКА ПОДПИСКИ ----
     function getSubscriptionTraffic(sub) {
       if (!sub) return 0;
       if (sub.traffic !== undefined && sub.traffic > 0) {
@@ -84,7 +81,6 @@ export default {
       return total;
     }
 
-    // ---- СЕРВЕРЫ (7 ШТУК) ----
     const realNodes = [
       { tag: "de-1", address: "de-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 Германия", flag: "de", network: "tcp", flow: "xtls-rprx-vision" },
       { tag: "se-1", address: "se-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇸🇪 Швеция", flag: "se", network: "tcp", flow: "xtls-rprx-vision" },
@@ -95,7 +91,6 @@ export default {
       { tag: "lte-1", address: "hole-nn.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 LTE #1", flag: "de", network: "grpc", flow: "", grpcServiceName: "ads.x5.ru" }
     ];
 
-    // ---- ПУСТОЙ СЕРВЕР ----
     const emptyNodes = [{
       tag: "disabled",
       address: "0.0.0.0",
@@ -111,7 +106,6 @@ export default {
       grpcServiceName: ""
     }];
 
-    // ---- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----
     function makeOutbound(n) {
       const outbound = {
         tag: n.tag,
@@ -191,7 +185,6 @@ export default {
       };
     }
 
-    // ---- АДМИН-ПАНЕЛЬ ----
     if (path === '/admin') {
       const cookies = request.headers.get('Cookie') || '';
       const hasSession = cookies.includes('admin_session=18032014');
@@ -216,7 +209,7 @@ export default {
               traffic: 0
             };
             await saveSubscriptions(subscriptions);
-            return new Response(getAdminPanel(subscriptions), {
+            return new Response(getAdminPanel(subscriptions, url), {
               headers: { "Content-Type": "text/html; charset=utf-8" }
             });
           }
@@ -227,7 +220,7 @@ export default {
               subscriptions[key].createdAt = Date.now();
             }
             await saveSubscriptions(subscriptions);
-            return new Response(getAdminPanel(subscriptions), {
+            return new Response(getAdminPanel(subscriptions, url), {
               headers: { "Content-Type": "text/html; charset=utf-8" }
             });
           }
@@ -257,12 +250,12 @@ export default {
           }
 
           await saveSubscriptions(subscriptions);
-          return new Response(getAdminPanel(subscriptions), {
+          return new Response(getAdminPanel(subscriptions, url), {
             headers: { "Content-Type": "text/html; charset=utf-8" }
           });
         }
 
-        return new Response(getAdminPanel(subscriptions), {
+        return new Response(getAdminPanel(subscriptions, url), {
           headers: { "Content-Type": "text/html; charset=utf-8" }
         });
       }
@@ -272,7 +265,7 @@ export default {
         const password = formData.get('password');
 
         if (password === '18032014') {
-          return new Response(getAdminPanel(subscriptions), {
+          return new Response(getAdminPanel(subscriptions, url), {
             headers: {
               "Content-Type": "text/html; charset=utf-8",
               "Set-Cookie": "admin_session=18032014; Max-Age=86400; Path=/; Secure; HttpOnly; SameSite=Strict"
@@ -290,7 +283,6 @@ export default {
       });
     }
 
-    // ---- ПОДПИСКИ /sub/ID ----
     if (path.startsWith('/sub/')) {
       const subId = path.replace('/sub/', '');
       const sub = subscriptions[subId];
@@ -344,14 +336,13 @@ export default {
   }
 };
 
-// ---- СТРАНИЦЫ ----
 function getLoginPage(error) {
   const errorHtml = error ? '<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:12px;margin-bottom:20px;color:#ef4444;font-size:14px;">❌ Неверный пароль. Попробуйте снова.</div>' : '';
   
   return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prism VPN</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",system-ui,sans-serif;background:#0b0e14;color:#e4e9f0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:48px 40px;border-radius:32px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,0.8)}.icon{font-size:56px;display:block;margin-bottom:12px}.title{font-size:28px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}.sub{color:#8b95a9;font-size:15px;margin-bottom:28px}.input-group{position:relative;margin-bottom:16px}.input-group input{width:100%;padding:14px 18px;border-radius:14px;border:1px solid #27272a;background:#111113;color:#e4e9f0;font-size:16px;transition:0.3s}.input-group input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.15)}.btn{width:100%;padding:14px;border-radius:99px;border:none;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:700;font-size:16px;cursor:pointer;transition:0.3s}.btn:hover{opacity:0.85;transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,0.3)}.btn:active{transform:scale(0.98)}.footer{color:#4b5563;font-size:13px;margin-top:20px}.footer a{color:#58a6ff;text-decoration:none}</style></head><body><div class="card"><span class="icon">🔐</span><div class="title">Prism VPN</div><div class="sub">Введите пароль для доступа</div>' + errorHtml + '<form method="POST" action="/admin"><div class="input-group"><input type="password" name="password" placeholder="Пароль" required></div><button type="submit" class="btn">Войти</button></form><div class="footer">Ошибка? <a href="https://t.me/fhcsupport">@fhcsupport</a></div></div></body></html>';
 }
 
-function getAdminPanel(subscriptions) {
+function getAdminPanel(subscriptions, url) {
   let list = '';
   for (const [id, sub] of Object.entries(subscriptions)) {
     const status = sub.active ? '🟢 Активна' : '🔴 Отключена';
@@ -369,7 +360,7 @@ function getAdminPanel(subscriptions) {
 function getSubPage(subId, sub, isActive, isManuallyDisabled, isExpired, usedTraffic, url) {
   const expireDate = sub.expire ? new Date(sub.expire).toLocaleDateString('ru-RU') : 'Навсегда';
   const subName = sub.name || subId;
-  const link = 'https://' + url.host + '/sub/' + subId;
+  const link = 'https://sub.prismvpnhosting.workers.dev/sub/' + subId;
   
   if (!isActive) {
     let statusText = '';
@@ -383,10 +374,10 @@ function getSubPage(subId, sub, isActive, isManuallyDisabled, isExpired, usedTra
       helpText = 'Продлите доступ, чтобы продолжить пользоваться сервисом';
     }
     
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prism VPN — ' + subName + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",system-ui,sans-serif;background:#0b0e14;color:#e4e9f0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px 28px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,0.8)}.logo-icon{font-size:56px;display:block;margin-bottom:4px}.title{font-size:28px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.subname{color:#8b95a9;font-size:14px;margin-top:2px;margin-bottom:16px}.status-badge{display:inline-block;background:rgba(239,68,68,0.15);color:#ef4444;padding:4px 18px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid rgba(239,68,68,0.2);margin-bottom:20px}.disabled-box{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:16px;padding:24px 20px;margin-bottom:20px}.disabled-box .big-icon{font-size:52px;display:block;margin-bottom:8px}.disabled-box .status{font-size:22px;font-weight:700;color:#ef4444;margin-bottom:4px}.disabled-box .hint{font-size:15px;color:#8b95a9;margin-bottom:4px}.disabled-box .support{font-size:15px;color:#e4e9f0;font-weight:500}.disabled-box .support a{color:#58a6ff;text-decoration:none;font-weight:600}.disabled-box .support a:hover{text-decoration:underline}.copy-btn{display:inline-block;background:#1e293b;border:1px solid #27272a;border-radius:99px;padding:12px 28px;color:#e4e9f0;font-size:15px;font-weight:500;cursor:pointer;transition:0.3s;margin:6px 0;width:100%}.copy-btn:hover{background:#2a2a2e;border-color:#3f3f46;transform:translateY(-2px)}.copy-btn:active{transform:scale(0.97)}.footer-links{display:flex;justify-content:center;gap:20px;margin-top:16px;font-size:14px;color:#5a5f6b}.footer-links a{color:#58a6ff;text-decoration:none}.footer-links a:hover{text-decoration:underline}.id-label{font-size:11px;color:#4b5563;margin-top:12px;word-break:break-all}.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e4e9f0;padding:12px 28px;border-radius:40px;box-shadow:0 8px 24px rgba(0,0,0,0.6);font-size:14px;opacity:0;transition:opacity 0.3s ease;pointer-events:none;border:1px solid #334155;z-index:999}.toast.show{opacity:1}@media(max-width:400px){.card{padding:28px 16px}}</style></head><body><div class="card"><span class="logo-icon">🚀</span><div class="title">Prism VPN</div><div class="subname">' + subName + '</div><div class="status-badge">● Неактивна</div><div class="disabled-box"><span class="big-icon">⛔</span><div class="status">' + statusText + '</div><div class="hint">' + helpText + '</div><div class="support"><a href="https://t.me/fhcsupport" target="_blank">@fhcsupport</a></div></div><button class="copy-btn" onclick="copyLink(\'' + link + '\')">📋 Копировать ссылку</button><div class="footer-links"><a href="/">Главная</a><a href="https://t.me/fhcsupport" target="_blank">Поддержка</a></div><div class="id-label">ID: ' + subId + '</div></div><div id="toast" class="toast">✅ Ссылка скопирована!</div><script>function copyLink(link){if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){showToast()}).catch(function(){fallbackCopy(link)})}else{fallbackCopy(link)}}function fallbackCopy(text){var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");showToast()}catch(e){}document.body.removeChild(ta)}function showToast(){var t=document.getElementById("toast");t.classList.add("show");clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove("show")},2000)}</script></body></html>';
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prism VPN — ' + subName + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",system-ui,sans-serif;background:#0b0e14;color:#e4e9f0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px 28px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,0.8)}.logo-icon{font-size:56px;display:block;margin-bottom:4px}.title{font-size:28px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.subname{color:#8b95a9;font-size:14px;margin-top:2px;margin-bottom:16px}.status-badge{display:inline-block;background:rgba(239,68,68,0.15);color:#ef4444;padding:4px 18px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid rgba(239,68,68,0.2);margin-bottom:20px}.disabled-box{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:16px;padding:24px 20px;margin-bottom:20px}.disabled-box .big-icon{font-size:52px;display:block;margin-bottom:8px}.disabled-box .status{font-size:22px;font-weight:700;color:#ef4444;margin-bottom:4px}.disabled-box .hint{font-size:15px;color:#8b95a9;margin-bottom:4px}.disabled-box .support{font-size:15px;color:#e4e9f0;font-weight:500}.disabled-box .support a{color:#58a6ff;text-decoration:none;font-weight:600}.disabled-box .support a:hover{text-decoration:underline}.copy-btn{display:inline-block;background:#1e293b;border:1px solid #27272a;border-radius:99px;padding:12px 28px;color:#e4e9f0;font-size:15px;font-weight:500;cursor:pointer;transition:0.3s;margin:6px 0;width:100%}.copy-btn:hover{background:#2a2a2e;border-color:#3f3f46;transform:translateY(-2px)}.copy-btn:active{transform:scale(0.97)}.footer-links{display:flex;justify-content:center;gap:20px;margin-top:16px;font-size:14px;color:#5a5f6b}.footer-links a{color:#58a6ff;text-decoration:none}.footer-links a:hover{text-decoration:underline}.id-label{font-size:11px;color:#4b5563;margin-top:12px;word-break:break-all}.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e4e9f0;padding:12px 28px;border-radius:40px;box-shadow:0 8px 24px rgba(0,0,0,0.6);font-size:14px;opacity:0;transition:opacity 0.3s ease;pointer-events:none;border:1px solid #334155;z-index:999}.toast.show{opacity:1}@media(max-width:400px){.card{padding:28px 16px}}</style></head><body><div class="card"><span class="logo-icon">🚀</span><div class="title">Prism VPN</div><div class="subname">' + subName + '</div><div class="status-badge">● Неактивна</div><div class="disabled-box"><span class="big-icon">⛔</span><div class="status">' + statusText + '</div><div class="hint">' + helpText + '</div><div class="support"><a href="https://t.me/fhcsupport" target="_blank">@fhcsupport</a></div></div><button class="copy-btn" onclick="copyLink(\'' + link + '\')">📋 Копировать ссылку</button><div class="footer-links"><a href="/">Главная</a><a href="https://t.me/fhcsupport" target="_blank">Поддержка</a></div><div class="id-label">ID: ' + subId + '</div></div><div id="toast" class="toast">✅ Ссылка скопирована!</div><script>function copyLink(link){if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){showToast()}).catch(function(){fallbackCopy(link)})}else{fallbackCopy(link)}}function fallbackCopy(text){var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");showToast()}catch(e){}document.body.removeChild(ta)}function showToast(){var t=document.getElementById("toast");t.classList.add("show");clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove("show")},2000)}</script></html>';
   }
   
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prism VPN — ' + subName + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",system-ui,sans-serif;background:#0b0e14;color:#e4e9f0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px 28px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,0.8)}.logo-icon{font-size:56px;display:block;margin-bottom:4px}.title{font-size:28px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.subname{color:#8b95a9;font-size:14px;margin-top:2px;margin-bottom:16px}.status-badge{display:inline-block;background:rgba(34,197,94,0.15);color:#22c55e;padding:4px 18px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid rgba(34,197,94,0.2);margin-bottom:20px}.stats{background:#111113;padding:18px;border-radius:16px;border:1px solid #1e1e21;margin-bottom:20px}.stat-item{display:flex;justify-content:space-between;padding:6px 0}.stat-item+.stat-item{border-top:1px solid #1e1e21;margin-top:4px;padding-top:10px}.stat-label{color:#8b95a9;font-size:14px}.stat-value{font-weight:600;font-size:15px}.stat-value .date{color:#fca5a5}.copy-btn{display:inline-block;background:#1e293b;border:1px solid #27272a;border-radius:99px;padding:12px 28px;color:#e4e9f0;font-size:15px;font-weight:500;cursor:pointer;transition:0.3s;margin:6px 0;width:100%}.copy-btn:hover{background:#2a2a2e;border-color:#3f3f46;transform:translateY(-2px)}.copy-btn:active{transform:scale(0.97)}.footer-links{display:flex;justify-content:center;gap:20px;margin-top:16px;font-size:14px;color:#5a5f6b}.footer-links a{color:#58a6ff;text-decoration:none}.footer-links a:hover{text-decoration:underline}.id-label{font-size:11px;color:#4b5563;margin-top:12px;word-break:break-all}.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e4e9f0;padding:12px 28px;border-radius:40px;box-shadow:0 8px 24px rgba(0,0,0,0.6);font-size:14px;opacity:0;transition:opacity 0.3s ease;pointer-events:none;border:1px solid #334155;z-index:999}.toast.show{opacity:1}@media(max-width:400px){.card{padding:28px 16px}}</style></head><body><div class="card"><span class="logo-icon">🚀</span><div class="title">Prism VPN</div><div class="subname">' + subName + '</div><div class="status-badge">● Активен</div><div class="stats"><div class="stat-item"><span class="stat-label">📦 Трафик</span><span class="stat-value">' + usedTraffic + ' GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span></div><div class="stat-item"><span class="stat-label">📅 Истекает</span><span class="stat-value"><span class="date">' + expireDate + '</span></span></div></div><button class="copy-btn" onclick="copyLink(\'' + link + '\')">📋 Копировать ссылку</button><div class="footer-links"><a href="/">Главная</a><a href="https://t.me/fhcsupport" target="_blank">Поддержка</a></div><div class="id-label">ID: ' + subId + '</div></div><div id="toast" class="toast">✅ Ссылка скопирована!</div><script>function copyLink(link){if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){showToast()}).catch(function(){fallbackCopy(link)})}else{fallbackCopy(link)}}function fallbackCopy(text){var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");showToast()}catch(e){}document.body.removeChild(ta)}function showToast(){var t=document.getElementById("toast");t.classList.add("show");clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove("show")},2000)}</script></body></html>';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prism VPN — ' + subName + '</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",system-ui,sans-serif;background:#0b0e14;color:#e4e9f0;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}.card{background:linear-gradient(145deg,#18181b,#0d0d10);padding:40px 28px;border-radius:28px;border:1px solid #27272a;max-width:400px;width:100%;text-align:center;box-shadow:0 30px 60px -20px rgba(0,0,0,0.8)}.logo-icon{font-size:56px;display:block;margin-bottom:4px}.title{font-size:28px;font-weight:700;background:linear-gradient(135deg,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.subname{color:#8b95a9;font-size:14px;margin-top:2px;margin-bottom:16px}.status-badge{display:inline-block;background:rgba(34,197,94,0.15);color:#22c55e;padding:4px 18px;border-radius:99px;font-size:13px;font-weight:600;border:1px solid rgba(34,197,94,0.2);margin-bottom:20px}.stats{background:#111113;padding:18px;border-radius:16px;border:1px solid #1e1e21;margin-bottom:20px}.stat-item{display:flex;justify-content:space-between;padding:6px 0}.stat-item+.stat-item{border-top:1px solid #1e1e21;margin-top:4px;padding-top:10px}.stat-label{color:#8b95a9;font-size:14px}.stat-value{font-weight:600;font-size:15px}.stat-value .date{color:#fca5a5}.copy-btn{display:inline-block;background:#1e293b;border:1px solid #27272a;border-radius:99px;padding:12px 28px;color:#e4e9f0;font-size:15px;font-weight:500;cursor:pointer;transition:0.3s;margin:6px 0;width:100%}.copy-btn:hover{background:#2a2a2e;border-color:#3f3f46;transform:translateY(-2px)}.copy-btn:active{transform:scale(0.97)}.footer-links{display:flex;justify-content:center;gap:20px;margin-top:16px;font-size:14px;color:#5a5f6b}.footer-links a{color:#58a6ff;text-decoration:none}.footer-links a:hover{text-decoration:underline}.id-label{font-size:11px;color:#4b5563;margin-top:12px;word-break:break-all}.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e4e9f0;padding:12px 28px;border-radius:40px;box-shadow:0 8px 24px rgba(0,0,0,0.6);font-size:14px;opacity:0;transition:opacity 0.3s ease;pointer-events:none;border:1px solid #334155;z-index:999}.toast.show{opacity:1}@media(max-width:400px){.card{padding:28px 16px}}</style></head><body><div class="card"><span class="logo-icon">🚀</span><div class="title">Prism VPN</div><div class="subname">' + subName + '</div><div class="status-badge">● Активен</div><div class="stats"><div class="stat-item"><span class="stat-label">📦 Трафик</span><span class="stat-value">' + usedTraffic + ' GB <span style="color:#8b95a9;font-weight:400;">/ ∞</span></span></div><div class="stat-item"><span class="stat-label">📅 Истекает</span><span class="stat-value"><span class="date">' + expireDate + '</span></span></div></div><button class="copy-btn" onclick="copyLink(\'' + link + '\')">📋 Копировать ссылку</button><div class="footer-links"><a href="/">Главная</a><a href="https://t.me/fhcsupport" target="_blank">Поддержка</a></div><div class="id-label">ID: ' + subId + '</div></div><div id="toast" class="toast">✅ Ссылка скопирована!</div><script>function copyLink(link){if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){showToast()}).catch(function(){fallbackCopy(link)})}else{fallbackCopy(link)}}function fallbackCopy(text){var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");showToast()}catch(e){}document.body.removeChild(ta)}function showToast(){var t=document.getElementById("toast");t.classList.add("show");clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove("show")},2000)}</script></html>';
 }
 
 function getLandingPage() {
