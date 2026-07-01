@@ -92,7 +92,7 @@ export default {
       { tag: "fi-1", address: "fi.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-36.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇫🇮 Финляндия", flag: "fi", network: "tcp", flow: "xtls-rprx-vision" },
       { tag: "ru-1", address: "ru.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-38.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇷🇺 Россия", flag: "ru", network: "tcp", flow: "xtls-rprx-vision" },
       { tag: "tr-1", address: "tr.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-38.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "", remarks: "🇹🇷 Турция", flag: "tr", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "lte-1", address: "de-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 Мобильная связь #1", flag: "de", network: "tcp", flow: "xtls-rprx-vision" }
+      { tag: "mobile-1", address: "de-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 Мобильная связь #1", flag: "de", network: "tcp", flow: "xtls-rprx-vision" }
     ];
 
     // ---- ПУСТОЙ СЕРВЕР ----
@@ -191,15 +191,20 @@ export default {
       };
     }
 
-    // ---- ФУНКЦИЯ ДЛЯ "АВТО ВЫБОР" ----
+    // ---- ФУНКЦИЯ ДЛЯ "АВТО ВЫБОР ⚡" ----
     function makeAutoConfig(nodes) {
       const outbounds = nodes.map(n => makeOutbound(n));
       const selectorTag = "auto-selector";
       const selectorOutbound = {
         tag: selectorTag,
-        protocol: "selector",
-        outbounds: nodes.map(n => n.tag),
-        default: "lte-1"
+        protocol: "balancer",
+        settings: {
+          selector: nodes.map(n => n.tag),
+          strategy: {
+            type: "leastPing"
+          },
+          fallbackTag: "direct"
+        }
       };
       outbounds.push(selectorOutbound);
       outbounds.push({ tag: "direct", protocol: "freedom" });
@@ -215,10 +220,10 @@ export default {
           enableConcurrency: true,
           probeInterval: "1m",
           probeUrl: "https://www.google.com/generate_204",
-          subjectSelector: [selectorTag]
+          subjectSelector: nodes.map(n => n.tag)
         },
         outbounds: outbounds,
-        remarks: "🇩🇪 Авто выбор ⚡",
+        remarks: "⚡ Авто выбор ⚡",
         routing: {
           domainMatcher: "hybrid",
           domainStrategy: "IPIfNonMatch",
@@ -257,7 +262,7 @@ export default {
     if (isClient) {
       const configs = realNodes.map(n => makeFullConfig(n));
       const autoConfig = makeAutoConfig(realNodes);
-      // Авто выбор - первый
+      // Авто выбор – первым
       const fullConfigs = [autoConfig, ...configs];
       const headers = {
         'Content-Type': 'application/json; charset=utf-8',
@@ -391,7 +396,7 @@ export default {
   }
 };
 
-// ---- ОБРАБОТЧИК АДМИН-ПАНЕЛИ ----
+// ---- ОБРАБОТЧИК АДМИН-ПАНЕЛИ (без изменений) ----
 async function handleAdminPanel(request, method, subscriptions, saveSubscriptions, url) {
   if (method === 'POST') {
     const formData = await request.formData();
@@ -463,6 +468,8 @@ async function handleAdminPanel(request, method, subscriptions, saveSubscription
   });
 }
 
+// ---- СТРАНИЦЫ (getLoginPage, getLoginPage1, getAdminPanel, getSubPage, getLandingPage) остаются без изменений ----
+// ... (они такие же, как в предыдущей версии, их я не меняю)
 // ---- СТРАНИЦА ВХОДА ДЛЯ /admin ----
 function getLoginPage(error) {
   const errorHtml = error ? '<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:12px;margin-bottom:20px;color:#ef4444;font-size:14px;">❌ Неверный пароль. Попробуйте снова.</div>' : '';
