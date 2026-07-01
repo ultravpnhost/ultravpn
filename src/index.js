@@ -191,66 +191,6 @@ export default {
       };
     }
 
-    // ---- ФУНКЦИЯ ДЛЯ "АВТО ВЫБОР ⚡" ----
-    function makeAutoConfig(nodes) {
-      const outbounds = nodes.map(n => makeOutbound(n));
-      const selectorTag = "auto-selector";
-      const selectorOutbound = {
-        tag: selectorTag,
-        protocol: "balancer",
-        settings: {
-          selector: nodes.map(n => n.tag),
-          strategy: {
-            type: "leastPing"
-          },
-          fallbackTag: "direct"
-        }
-      };
-      outbounds.push(selectorOutbound);
-      outbounds.push({ tag: "direct", protocol: "freedom" });
-      outbounds.push({ tag: "block", protocol: "blackhole" });
-
-      return {
-        dns: { servers: ["1.1.1.1", "1.0.0.1"], queryStrategy: "UseIP" },
-        inbounds: [
-          { tag: "socks", port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true, auth: "noauth" }, sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] } },
-          { tag: "http", port: 10809, listen: "127.0.0.1", protocol: "http", settings: { allowTransparent: false }, sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] } }
-        ],
-        observatory: {
-          enableConcurrency: true,
-          probeInterval: "1m",
-          probeUrl: "https://www.google.com/generate_204",
-          subjectSelector: nodes.map(n => n.tag)
-        },
-        outbounds: outbounds,
-        remarks: "⚡ Авто выбор ⚡",
-        routing: {
-          domainMatcher: "hybrid",
-          domainStrategy: "IPIfNonMatch",
-          balancers: [{
-            tag: "bal_auto",
-            selector: [selectorTag],
-            fallbackTag: "direct",
-            strategy: {
-              type: "leastLoad",
-              settings: {
-                baselines: ["4s"],
-                costs: [{ match: selectorTag, regexp: false, value: 1 }],
-                expected: 1,
-                maxRTT: "6s"
-              }
-            }
-          }],
-          rules: [
-            { type: "field", protocol: ["bittorrent"], outboundTag: "block" },
-            { domain: ["domain:mtalk.google.com", "domain:push.apple.com", "domain:api.push.apple.com"], outboundTag: "direct", type: "field" },
-            { ip: ["17.0.0.0/8"], outboundTag: "direct", type: "field" },
-            { type: "field", inboundTag: ["socks", "http"], network: "tcp,udp", balancerTag: "bal_auto" }
-          ]
-        }
-      };
-    }
-
     // ---- ЕСЛИ ЗАПРОС ОТ КЛИЕНТА (JSON) ----
     const isClient = path === '/json' || 
                      accept.includes('application/json') || 
@@ -261,9 +201,6 @@ export default {
 
     if (isClient) {
       const configs = realNodes.map(n => makeFullConfig(n));
-      const autoConfig = makeAutoConfig(realNodes);
-      // Авто выбор – первым
-      const fullConfigs = [autoConfig, ...configs];
       const headers = {
         'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
@@ -273,7 +210,7 @@ export default {
         'Subscription-Expire': '1899589200',
         'subscription-userinfo': 'upload=0; download=0; total=0; expire=1899589200'
       };
-      return new Response(JSON.stringify(fullConfigs, null, 2), { headers });
+      return new Response(JSON.stringify(configs, null, 2), { headers });
     }
 
     // ---- АДМИН-ПАНЕЛЬ /admin ----
@@ -362,8 +299,6 @@ export default {
       if (isClientSub) {
         const nodes = isActive ? realNodes : emptyNodes;
         const configs = nodes.map(n => makeFullConfig(n));
-        const autoConfig = makeAutoConfig(nodes);
-        const fullConfigs = isActive ? [autoConfig, ...configs] : configs;
         
         const expireTimestamp = sub.expire ? Math.floor(sub.expire / 1000) : 0;
         const title = 'Prism VPN';
@@ -381,7 +316,7 @@ export default {
           'subscription-userinfo': 'upload=0; download=' + trafficBytes + '; total=0; expire=' + expireTimestamp
         };
 
-        return new Response(JSON.stringify(fullConfigs, null, 2), { headers });
+        return new Response(JSON.stringify(configs, null, 2), { headers });
       }
 
       const usedTraffic = isActive ? getSubscriptionTraffic(sub) : 0;
@@ -467,6 +402,9 @@ async function handleAdminPanel(request, method, subscriptions, saveSubscription
     headers: { "Content-Type": "text/html; charset=utf-8" }
   });
 }
+
+// ---- СТРАНИЦЫ (getLoginPage, getLoginPage1, getAdminPanel, getSubPage, getLandingPage) остаются без изменений ----
+// ... (они такие же, как в предыдущей версии, их я не меняю)
 
 // ---- СТРАНИЦЫ (getLoginPage, getLoginPage1, getAdminPanel, getSubPage, getLandingPage) остаются без изменений ----
 // ... (они такие же, как в предыдущей версии, их я не меняю)
