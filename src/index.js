@@ -1,110 +1,1150 @@
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const accept = request.headers.get("Accept") || "";
-    const userAgent = request.headers.get("user-agent") || "";
-
-    // ---- СЕРВЕРЫ (7 ШТУК) ----
-    const realNodes = [
-      { tag: "de-1", address: "de-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 Германия", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "se-1", address: "se-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇸🇪 Швеция", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "pl-1", address: "pl.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-35.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇵🇱 Польша", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "fi-1", address: "fi.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-36.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇫🇮 Финляндия", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "ru-1", address: "ru.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-38.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇷🇺 Россия", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "tr-1", address: "tr.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "sun9-38.userapi.com", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "", remarks: "🇹🇷 Турция", network: "tcp", flow: "xtls-rprx-vision" },
-      { tag: "mobile-1", address: "de-new.datanode-internal.net", port: 443, id: "9d5e7e04-53e4-4d98-bb26-236c907078a5", serverName: "ads.x5.ru", publicKey: "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic", shortId: "abbcd128", fingerprint: "qq", remarks: "🇩🇪 Мобильная связь #1", network: "tcp", flow: "xtls-rprx-vision" }
-    ];
-
-    // ---- ФУНКЦИЯ СОЗДАНИЯ OUTBOUND ----
-    function makeOutbound(n) {
-      const outbound = {
-        tag: n.tag,
-        protocol: "vless",
-        settings: {
-          vnext: [{
-            address: n.address,
-            port: n.port,
-            users: [{ id: n.id, encryption: "none" }]
-          }]
+    // Define the JSON data
+    const jsonData = [
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
         },
-        streamSettings: {
-          network: n.network,
-          security: "reality",
-          realitySettings: {
-            serverName: n.serverName,
-            show: false,
-            publicKey: n.publicKey,
-            shortId: n.shortId,
-            fingerprint: n.fingerprint
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
           }
-        }
-      };
-      if (n.flow) outbound.settings.vnext[0].users[0].flow = n.flow;
-      outbound.streamSettings.tcpSettings = {};
-      return outbound;
-    }
-
-    // ---- ФУНКЦИЯ ПОЛНОГО КОНФИГА ----
-    function makeFullConfig(node) {
-      const outbound = makeOutbound(node);
-      return {
-        dns: { servers: ["1.1.1.1", "1.0.0.1"], queryStrategy: "UseIP" },
-        inbounds: [
-          { tag: "socks", port: 10808, listen: "127.0.0.1", protocol: "socks", settings: { udp: true, auth: "noauth" }, sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] } },
-          { tag: "http", port: 10809, listen: "127.0.0.1", protocol: "http", settings: { allowTransparent: false }, sniffing: { enabled: true, routeOnly: false, destOverride: ["http", "tls", "quic"] } }
         ],
-        observatory: {
-          enableConcurrency: true,
-          probeInterval: "1m",
-          probeUrl: "https://www.google.com/generate_204",
-          subjectSelector: [node.tag]
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "de-1"
+          ]
         },
-        outbounds: [
-          outbound,
-          { tag: "direct", protocol: "freedom" },
-          { tag: "block", protocol: "blackhole" }
+        "outbounds": [
+          {
+            "tag": "de-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "de-new.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "ads.x5.ru",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": "qq"
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
         ],
-        remarks: node.remarks,
-        routing: {
-          domainMatcher: "hybrid",
-          domainStrategy: "IPIfNonMatch",
-          balancers: [{
-            tag: "bal_" + node.tag,
-            selector: [node.tag],
-            fallbackTag: "direct",
-            strategy: {
-              type: "leastLoad",
-              settings: {
-                baselines: ["4s"],
-                costs: [{ match: node.tag, regexp: false, value: 1 }],
-                expected: 1,
-                maxRTT: "6s"
+        "remarks": "🇩🇪 Германия",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_de-1",
+              "selector": [
+                "de-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "de-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
               }
             }
-          }],
-          rules: [
-            { type: "field", protocol: ["bittorrent"], outboundTag: "block" },
-            { domain: ["domain:mtalk.google.com", "domain:push.apple.com", "domain:api.push.apple.com"], outboundTag: "direct", type: "field" },
-            { ip: ["17.0.0.0/8"], outboundTag: "direct", type: "field" },
-            { type: "field", inboundTag: ["socks", "http"], network: "tcp,udp", balancerTag: "bal_" + node.tag }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_de-1"
+            }
           ]
         }
-      };
-    }
+      },
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
+        },
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          }
+        ],
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "se-1"
+          ]
+        },
+        "outbounds": [
+          {
+            "tag": "se-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "se-new.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "ads.x5.ru",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": "qq"
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
+        ],
+        "remarks": "🇸🇪 Швеция",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_se-1",
+              "selector": [
+                "se-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "se-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
+              }
+            }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_se-1"
+            }
+          ]
+        }
+      },
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
+        },
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          }
+        ],
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "pl-1"
+          ]
+        },
+        "outbounds": [
+          {
+            "tag": "pl-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "pl.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "sun9-35.userapi.com",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": "qq"
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
+        ],
+        "remarks": "🇵🇱 Польша",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_pl-1",
+              "selector": [
+                "pl-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "pl-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
+              }
+            }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_pl-1"
+            }
+          ]
+        }
+      },
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
+        },
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          }
+        ],
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "fi-1"
+          ]
+        },
+        "outbounds": [
+          {
+            "tag": "fi-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "fi.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "sun9-36.userapi.com",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": "qq"
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
+        ],
+        "remarks": "🇫🇮 Финляндия",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_fi-1",
+              "selector": [
+                "fi-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "fi-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
+              }
+            }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_fi-1"
+            }
+          ]
+        }
+      },
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
+        },
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          }
+        ],
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "ru-1"
+          ]
+        },
+        "outbounds": [
+          {
+            "tag": "ru-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "ru.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "sun9-38.userapi.com",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": "qq"
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
+        ],
+        "remarks": "🇷🇺 Россия",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_ru-1",
+              "selector": [
+                "ru-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "ru-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
+              }
+            }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_ru-1"
+            }
+          ]
+        }
+      },
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
+        },
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          }
+        ],
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "tr-1"
+          ]
+        },
+        "outbounds": [
+          {
+            "tag": "tr-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "tr.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "sun9-38.userapi.com",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": ""
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
+        ],
+        "remarks": "🇹🇷 Турция",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_tr-1",
+              "selector": [
+                "tr-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "tr-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
+              }
+            }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_tr-1"
+            }
+          ]
+        }
+      },
+      {
+        "dns": {
+          "servers": [
+            "1.1.1.1",
+            "1.0.0.1"
+          ],
+          "queryStrategy": "UseIP"
+        },
+        "inbounds": [
+          {
+            "tag": "socks",
+            "port": 10808,
+            "listen": "127.0.0.1",
+            "protocol": "socks",
+            "settings": {
+              "udp": true,
+              "auth": "noauth"
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          },
+          {
+            "tag": "http",
+            "port": 10809,
+            "listen": "127.0.0.1",
+            "protocol": "http",
+            "settings": {
+              "allowTransparent": false
+            },
+            "sniffing": {
+              "enabled": true,
+              "routeOnly": false,
+              "destOverride": [
+                "http",
+                "tls",
+                "quic"
+              ]
+            }
+          }
+        ],
+        "observatory": {
+          "enableConcurrency": true,
+          "probeInterval": "1m",
+          "probeUrl": "https://www.google.com/generate_204",
+          "subjectSelector": [
+            "mobile-1"
+          ]
+        },
+        "outbounds": [
+          {
+            "tag": "mobile-1",
+            "protocol": "vless",
+            "settings": {
+              "vnext": [
+                {
+                  "address": "de-new.datanode-internal.net",
+                  "port": 443,
+                  "users": [
+                    {
+                      "id": "9d5e7e04-53e4-4d98-bb26-236c907078a5",
+                      "encryption": "none",
+                      "flow": "xtls-rprx-vision"
+                    }
+                  ]
+                }
+              ]
+            },
+            "streamSettings": {
+              "network": "tcp",
+              "security": "reality",
+              "realitySettings": {
+                "serverName": "ads.x5.ru",
+                "show": false,
+                "publicKey": "r6lN34m1nN-xQZ458j5NPD5xJ3_QBF2bGzY4KJEo4ic",
+                "shortId": "abbcd128",
+                "fingerprint": "qq"
+              },
+              "tcpSettings": {}
+            }
+          },
+          {
+            "tag": "direct",
+            "protocol": "freedom"
+          },
+          {
+            "tag": "block",
+            "protocol": "blackhole"
+          }
+        ],
+        "remarks": "🇩🇪 Мобильная связь #1",
+        "routing": {
+          "domainMatcher": "hybrid",
+          "domainStrategy": "IPIfNonMatch",
+          "balancers": [
+            {
+              "tag": "bal_mobile-1",
+              "selector": [
+                "mobile-1"
+              ],
+              "fallbackTag": "direct",
+              "strategy": {
+                "type": "leastLoad",
+                "settings": {
+                  "baselines": [
+                    "4s"
+                  ],
+                  "costs": [
+                    {
+                      "match": "mobile-1",
+                      "regexp": false,
+                      "value": 1
+                    }
+                  ],
+                  "expected": 1,
+                  "maxRTT": "6s"
+                }
+              }
+            }
+          ],
+          "rules": [
+            {
+              "type": "field",
+              "protocol": [
+                "bittorrent"
+              ],
+              "outboundTag": "block"
+            },
+            {
+              "domain": [
+                "domain:mtalk.google.com",
+                "domain:push.apple.com",
+                "domain:api.push.apple.com"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "ip": [
+                "17.0.0.0/8"
+              ],
+              "outboundTag": "direct",
+              "type": "field"
+            },
+            {
+              "type": "field",
+              "inboundTag": [
+                "socks",
+                "http"
+              ],
+              "network": "tcp,udp",
+              "balancerTag": "bal_mobile-1"
+            }
+          ]
+        }
+      }
+    ];
 
-    // ---- ОТДАЁМ JSON ----
-    const configs = realNodes.map(n => makeFullConfig(n));
-
-    return new Response(JSON.stringify(configs, null, 2), {
+    // Return the JSON response
+    return new Response(JSON.stringify(jsonData, null, 2), {
       headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-        "Profile-Title": "Prism VPN",
-        "Subscription-Status": "active",
-        "Subscription-Traffic": "0 GB / ∞",
-        "Subscription-Expire": "1899589200",
-        "subscription-userinfo": "upload=0; download=0; total=0; expire=1899589200"
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
       }
     });
   }
