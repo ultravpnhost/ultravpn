@@ -2,8 +2,3 @@
 name = 'host'
 main = "src/index.js"
 compatibility_date = "2026-06-27"
-
-[[kv_namespaces]]
-binding = "KV"
-id = "1b05371dbfb943a4a3c5e008a0030cdd"
-preview_id = ""
